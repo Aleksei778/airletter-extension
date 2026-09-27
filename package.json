@@ -1,8 +1,8 @@
 {
-  "name": "quicksend-extension",
-  "displayName": "Quicksend extension",
+  "name": "airletter-extension",
+  "displayName": "Airletter",
   "version": "0.0.1",
-  "description": "Quicksend Extension",
+  "description": "Airletter — bulk email campaigns from your own Gmail",
   "author": "aleksey_pr",
   "scripts": {
     "dev": "plasmo dev",
@@ -28,9 +28,9 @@
     "typescript": "5.9.3"
   },
   "manifest": {
-    "name": "Quicksend",
+    "name": "Airletter",
     "version": "1.0",
-    "description": "QuickSend - Mass Email Service inside Gmail",
+    "description": "Airletter — bulk email campaigns from your own Gmail",
     "host_permissions": [
       "*://mail.google.com/*",
       "http://localhost/*",

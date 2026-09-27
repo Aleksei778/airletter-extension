@@ -11,7 +11,7 @@ class AuthManager {
         return new Promise((resolve, reject) => {
             const authUrl = this.baseUrl + this.apiEndpoints.LOGIN
 
-            console.log('[🔵 Quicksend] Starting OAuth flow:', authUrl)
+            console.log('[Airletter] Starting OAuth flow:', authUrl)
 
             chrome.identity.launchWebAuthFlow(
                 {
@@ -19,20 +19,20 @@ class AuthManager {
                     interactive: interactive
                 },
                 async (redirectUrl) => {
-                    console.log('[🔵 Quicksend] RAW redirectUrl:', redirectUrl)
+                    console.log('[Airletter] RAW redirectUrl:', redirectUrl)
 
                     if (chrome.runtime.lastError) {
-                        console.error('[🔵 Quicksend] OAuth error:', chrome.runtime.lastError.message)
+                        console.error('[Airletter] OAuth error:', chrome.runtime.lastError.message)
                         reject(chrome.runtime.lastError)
                         return
                     }
 
                     if (!redirectUrl) {
-                        reject(new Error('[🔵 Quicksend] No redirect URL'))
+                        reject(new Error('[Airletter] No redirect URL'))
                         return
                     }
 
-                    console.log('[🔵 Quicksend] Got redirect URL:', redirectUrl)
+                    console.log('[Airletter] Got redirect URL:', redirectUrl)
 
                     try {
                         const url = new URL(redirectUrl)
@@ -40,8 +40,8 @@ class AuthManager {
                         const refreshToken = url.searchParams.get("refresh_jwt_token")
 
                         if (!accessToken || !refreshToken) {
-                            console.error('[🔵 Quicksend] No tokens in redirect URL')
-                            reject(new Error('[🔵 Quicksend] No JWT tokens'))
+                            console.error('[Airletter] No tokens in redirect URL')
+                            reject(new Error('[Airletter] No JWT tokens'))
                             return
                         }
 
@@ -50,10 +50,10 @@ class AuthManager {
 
                         console.log(`Tokens: ${accessToken} ${refreshToken}`)
 
-                        console.log('[🔵 Quicksend] Quicksend: Logged in successfully')
+                        console.log('[Airletter] Logged in successfully')
                         resolve(accessToken)
                     } catch (error) {
-                        console.error('[🔵 Quicksend] Error parsing redirect URL:', error)
+                        console.error('[Airletter] Error parsing redirect URL:', error)
                         reject(error)
                     }
                 }
@@ -65,7 +65,7 @@ class AuthManager {
         const refreshToken = await this.storageService.getRefreshToken()
 
         if (!refreshToken) {
-            throw new Error('[🔵 Quicksend] No refresh token')
+            throw new Error('[Airletter] No refresh token')
         }
 
         try {
@@ -78,7 +78,7 @@ class AuthManager {
             })
 
             if (!response.ok) {
-                throw new Error('[🔵 Quicksend] Failed to refresh token')
+                throw new Error('[Airletter] Failed to refresh token')
             }
 
             const data = await response.json()
@@ -88,11 +88,11 @@ class AuthManager {
             await this.storageService.setAccessToken(newAccessToken)
             await this.storageService.setRefreshToken(newRefreshToken)
 
-            console.log('[🔵 Quicksend] Token refreshed')
+            console.log('[Airletter] Token refreshed')
 
             return newAccessToken
         } catch (error) {
-            console.error('[🔵 Quicksend] Failed to refresh token:', error)
+            console.error('[Airletter] Failed to refresh token:', error)
             throw new Error(error.message)
         }
     }
@@ -116,7 +116,7 @@ class AuthManager {
         })
 
         if (response.status === 401) {
-            console.log('[🔵 Quicksend] Got 401, refreshing token...')
+            console.log('[Airletter] Got 401, refreshing token...')
 
             try {
                 const newAccessToken = await this.refreshToken()
@@ -130,7 +130,7 @@ class AuthManager {
                     }
                 })
             } catch (refreshTokenError) {
-                console.log('[🔵 Quicksend] Refresh failed, need re-login')
+                console.log('[Airletter] Refresh failed, need re-login')
 
                 await this.login(true)
 
@@ -287,13 +287,13 @@ chrome.webNavigation.onCompleted.addListener(
     async (details) => {
         if (details.frameId !== 0) return
 
-        console.log('[🔵 Quicksend] Gmail opened')
+        console.log('[Airletter] Gmail opened')
 
         const accessToken = await storageService.getAccessToken()
         const refreshToken = await storageService.getRefreshToken()
 
         if (!accessToken || !refreshToken) {
-            console.log('[🔵 Quicksend] No tokens, starting login...')
+            console.log('[Airletter] No tokens, starting login...')
 
             try {
                 await authManager.login(true)
@@ -302,14 +302,14 @@ chrome.webNavigation.onCompleted.addListener(
                     chrome.tabs.sendMessage(details.tabId, {
                         type: 'AUTH_SUCCESS',
                     }).catch((err) => {
-                        console.log('[🔵 Quicksend] Content script not ready:', err)
+                        console.log('[Airletter] Content script not ready:', err)
                     })
                 }, 2000)
             } catch (error) {
-                console.error('[🔵 Quicksend] Login failed:', error.error)
+                console.error('[Airletter] Login failed:', error.error)
             }
         } else {
-            console.log('[🔵 Quicksend] Has tokens')
+            console.log('[Airletter] Has tokens')
 
             chrome.tabs.sendMessage(details.tabId, {
                 type: 'ALREADY_AUTHENTICATED'
@@ -321,6 +321,6 @@ chrome.webNavigation.onCompleted.addListener(
     }
 )
 
-console.log('[🔵 Quicksend] Background script loaded!')
+console.log('[Airletter] Background script loaded!')
 
 export {}

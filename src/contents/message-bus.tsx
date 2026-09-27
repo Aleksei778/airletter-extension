@@ -12,7 +12,7 @@ export function subscribe(handler: (type: string) => void) {
 
 window.addEventListener("message", (event) => {
   if (event.source !== window) return
-  if (event.data?.source !== "quicksend") return
+  if (event.data?.source !== "airletter") return
 
   listeners.forEach((fn) => fn(event.data.type))
 })

@@ -50,7 +50,7 @@ export interface ProfileButtonProps {
     onClick?: () => Promise<void>
 }
 
-export interface QuickSendButtonProps {
+export interface AirletterButtonProps {
     onClick?: () => Promise<void>
 }
 

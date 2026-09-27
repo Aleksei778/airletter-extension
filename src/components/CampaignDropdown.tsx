@@ -26,7 +26,7 @@ export const CampaignDropdown = ({ isVisible }: CampaignDropdownProps) => {
                     setValues(savedTimeSettings)
                 }
             } catch (e) {
-                console.error(`🔵 Quicksend: Failed to load time settings: ${e}`)
+                console.error(`[Airletter] Failed to load time settings: ${e}`)
             } finally {
                 setLoading(false)
             }
@@ -44,7 +44,7 @@ export const CampaignDropdown = ({ isVisible }: CampaignDropdownProps) => {
 
                 await storageService.setTimeSettings(composeWindowId, values)
             } catch (e) {
-                console.error(`🔵 Quicksend: Failed to save time settings: ${e}`)
+                console.error(`[Airletter] Failed to save time settings: ${e}`)
             }
         }
 

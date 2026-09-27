@@ -37,7 +37,7 @@ export function SpreadsheetsButton() {
   const handleClick = () => {
     window.postMessage(
       {
-        source: "quicksend",
+        source: "airletter",
         type: "OPEN_SHEETS_MODAL"
       },
       "*"

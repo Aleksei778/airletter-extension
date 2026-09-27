@@ -60,7 +60,7 @@ class GmailService {
             if (
                 typeof rep === "string" &&
                 rep.includes("recipients") &&
-                rep.includes("quicksend")
+                rep.includes("airletter.invalid")
             ) {
                 const uniqueId = rep.split("id_")[1]?.split("@")[0]
 
@@ -138,7 +138,7 @@ class GmailService {
         const activeElement = document.activeElement;
         recipientField.focus()
 
-        const emailString = `${count}-recipients-id_${sheetId}@quicksend.com`
+        const emailString = `${count}-recipients-id_${sheetId}@airletter.invalid`
         recipientField.value = emailString
 
         const events = [

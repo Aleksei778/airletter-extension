@@ -2,7 +2,7 @@ import type { PlasmoCSConfig, PlasmoGetInlineAnchorList } from "plasmo"
 import React, { useEffect, useRef, useState } from "react"
 import { MoreVertical } from "lucide-react"
 
-import { QuickSendButton } from "~src/components/QuickSendButton"
+import { AirletterButton } from "~src/components/AirletterButton"
 import { GMAIL_SELECTORS } from "~src/utils/constants"
 import { gmailService } from "~src/services/gmail"
 import { findParentComposeWindow } from "~src/utils/helpers"
@@ -33,7 +33,7 @@ export const getInlineAnchorList: PlasmoGetInlineAnchorList = async () => {
         if (sendButton) {
             const anchor = sendButton.closest('.gU.Up')
             if (anchor) {
-                anchor.setAttribute('data-quicksend-compose-id', window.getAttribute('data-compose-id') || '')
+                anchor.setAttribute('data-airletter-compose-id', window.getAttribute('data-compose-id') || '')
                 anchors.push(anchor)
             }
         }
@@ -45,7 +45,7 @@ export const getInlineAnchorList: PlasmoGetInlineAnchorList = async () => {
     }))
 }
 
-export default function QuickSendInline() {
+export default function AirletterInline() {
     const [showCampaign, setShowCampaign] = useState(false)
     const containerRef = useRef<HTMLDivElement>(null)
     const [showSheets, setShowSheets] = useState(false)
@@ -62,7 +62,7 @@ export default function QuickSendInline() {
     useEffect(() => {
       const handler = (event: MessageEvent) => {
         if (event.source !== window) return
-        if (event.data?.source !== "quicksend") return
+        if (event.data?.source !== "airletter") return
 
         if (event.data.type === "OPEN_SHEETS_MODAL") {
           setShowSheets(true)
@@ -90,7 +90,7 @@ export default function QuickSendInline() {
         }
 
         if (!composeWindow) {
-            const composeId = containerRef.current.closest('.gU.Up')?.getAttribute('data-quicksend-compose-id')
+            const composeId = containerRef.current.closest('.gU.Up')?.getAttribute('data-airletter-compose-id')
 
             if (composeId) {
                 composeWindow = document.querySelector(`[data-compose-id="${composeId}"]`)
@@ -98,9 +98,9 @@ export default function QuickSendInline() {
         }
 
         if (!composeWindow) {
-            console.error("[Quicksend] Compose window not found!")
-            console.log("[Quicksend] Container:", containerRef.current)
-            console.log("[Quicksend] All compose windows:", document.querySelectorAll('.AD, .M9'))
+            console.error("[Airletter] Compose window not found!")
+            console.log("[Airletter] Container:", containerRef.current)
+            console.log("[Airletter] All compose windows:", document.querySelectorAll('.AD, .M9'))
             toast.error("Cannot find compose window. Please try again.")
 
             return
@@ -154,7 +154,7 @@ export default function QuickSendInline() {
             gap: '8px'
         }}
       >
-        <QuickSendButton onClick={handleClick} />
+        <AirletterButton onClick={handleClick} />
 
         <button
           style={{

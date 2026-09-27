@@ -2,9 +2,9 @@ import React from "react"
 import { useState } from "react"
 import { Send } from "lucide-react"
 
-import type { QuickSendButtonProps } from "~src/types"
+import type { AirletterButtonProps } from "~src/types"
 
-export function QuickSendButton({ onClick }: QuickSendButtonProps) {
+export function AirletterButton({ onClick }: AirletterButtonProps) {
     const [disabled, setDisabled] = useState<boolean>(false)
     const [isHovered, setIsHovered] = useState<boolean>(false)
 
@@ -36,10 +36,10 @@ export function QuickSendButton({ onClick }: QuickSendButtonProps) {
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           disabled={disabled}
-          title="Click to this Quicksend button instead of Send to send mass emails."
+          title="Send to all recipients with Airletter instead of the regular Send button"
         >
           <Send size={16} strokeWidth={2.5} />
-          <span>Quicksend</span>
+          <span>Airletter</span>
         </button>
     )
 }

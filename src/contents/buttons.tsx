@@ -43,7 +43,7 @@ export default function GmailButtons() {
     useEffect(() => {
         const handler = (event: MessageEvent) => {
             if (event.source !== window) return
-            if (event.data?.source !== "quicksend") return
+            if (event.data?.source !== "airletter") return
 
             if (event.data.type === "OPEN_SHEETS_MODAL") {
                 console.log("Opening sheets modal") 
