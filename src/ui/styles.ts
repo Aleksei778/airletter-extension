@@ -19,6 +19,35 @@ export const styles = String.raw`
 
   font-family: var(--body);
   -webkit-font-smoothing: antialiased;
+
+  /* Shadow DOM isolates selectors but not inheritance: Gmail sets
+     white-space: nowrap, line-height, letter-spacing, text-align… on the
+     containers we are mounted into, and without this reset text runs out
+     of our panels in one line. */
+  white-space: normal;
+  line-height: 1.4;
+  letter-spacing: normal;
+  word-spacing: normal;
+  text-align: left;
+  text-indent: 0;
+  text-transform: none;
+  text-shadow: none;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+  font-variant: normal;
+  direction: ltr;
+  visibility: visible;
+  cursor: auto;
+  user-select: text;
+  overflow-wrap: break-word;
+}
+
+/* controls keep their label on one line */
+.al-send,
+.al-btn,
+.al-toast button {
+  white-space: nowrap;
 }
 
 * {
@@ -196,6 +225,7 @@ button {
 
 .al-title {
   margin: 0;
+  overflow-wrap: anywhere;
   font-family: var(--head);
   font-weight: 500;
   font-size: 18px;
@@ -203,6 +233,9 @@ button {
 }
 .al-display {
   margin: 0;
+  /* long words like "отправлять" must break rather than overflow */
+  overflow-wrap: anywhere;
+  hyphens: auto;
   font-family: var(--head);
   font-weight: 700;
   font-size: 28px;

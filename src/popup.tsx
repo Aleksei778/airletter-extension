@@ -2,7 +2,7 @@ import { styles as styleText } from "~src/ui/styles"
 import React from "react"
 
 import { AccountCard } from "~src/components/AccountCard"
-import { t } from "~src/lib/i18n"
+import { locale, t } from "~src/lib/i18n"
 import { injectFonts } from "~src/ui/fonts"
 import { PlaneMark } from "~src/ui/icons"
 
@@ -13,7 +13,7 @@ const ignore = (e: unknown) => console.error("[Airletter]", e)
 
 export default function Popup() {
   return (
-    <div className="al-root" style={{ width: 340, padding: 24, background: "#000", color: "#fff" }}>
+    <div className="al-root" lang={locale} style={{ width: 340, padding: 24, background: "#000", color: "#fff" }}>
       <style>{styleText + "body{margin:0;background:#000}"}</style>
 
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 26 }}>

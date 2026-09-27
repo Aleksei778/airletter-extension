@@ -7,7 +7,7 @@ import { SheetsDialog } from "~src/components/SheetsDialog"
 import { Toasts } from "~src/components/Toasts"
 import { emit, subscribe, toast } from "~src/lib/bus"
 import { showError } from "~src/lib/errors"
-import { t } from "~src/lib/i18n"
+import { locale, t } from "~src/lib/i18n"
 import { send } from "~src/lib/messages"
 import { addListChip, findComposeWindows, openComposeWindow } from "~src/services/gmail"
 import { newListId, saveList } from "~src/services/lists"
@@ -65,7 +65,7 @@ export default function Toolbar() {
   }
 
   return (
-    <div className="al-root" style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: 8 }}>
+    <div className="al-root" lang={locale} style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: 8 }}>
       <button
         className="al-icon-btn"
         title={t.sheets.button}

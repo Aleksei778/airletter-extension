@@ -7,7 +7,7 @@ import { SchedulePopover } from "~src/components/SchedulePopover"
 import { toast } from "~src/lib/bus"
 import { siteLink } from "~src/lib/config"
 import { showError } from "~src/lib/errors"
-import { formatDateTime, t } from "~src/lib/i18n"
+import { formatDateTime, locale, t } from "~src/lib/i18n"
 import { send, type AttachmentPayload } from "~src/lib/messages"
 import { findComposeWindow, GMAIL_SELECTORS, readAttachmentLinks, readDraft } from "~src/services/gmail"
 import type { Schedule } from "~src/types"
@@ -85,7 +85,7 @@ export default function ComposeActions() {
   }
 
   return (
-    <div ref={containerRef} className="al-root" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+    <div ref={containerRef} className="al-root" lang={locale} style={{ display: "flex", alignItems: "center", gap: 4 }}>
       <AirletterButton busy={busy} onClick={start} />
       <SchedulePopover value={schedule} onChange={setSchedule} />
     </div>
