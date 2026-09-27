@@ -31,31 +31,14 @@
     "version": "1.0",
     "description": "Airletter — bulk email campaigns from your own Gmail",
     "host_permissions": [
-      "*://mail.google.com/*",
-      "http://localhost/*",
-      "https://*.chromiumapp.org/*",
       "https://mail.google.com/*",
-      "https://mail-attachment.googleusercontent.com/*"
+      "https://mail-attachment.googleusercontent.com/*",
+      "$PLASMO_PUBLIC_SITE_URL/*"
     ],
     "permissions": [
       "identity",
-      "activeTab",
-      "scripting",
-      "storage",
-      "cookies",
-      "alarms",
-      "webNavigation"
-    ],
-    "oauth2": {
-      "client_id": "805694571596-igdkpi8kji1ti42kgnlfdbhuoe478jc6.apps.googleusercontent.com",
-      "scopes": [
-        "openid",
-        "https://www.googleapis.com/auth/userinfo.email",
-        "https://www.googleapis.com/auth/userinfo.profile",
-        "https://www.googleapis.com/auth/gmail.send",
-        "https://www.googleapis.com/auth/spreadsheets.readonly"
-      ]
-    }
+      "storage"
+    ]
   },
   "packageManager": "pnpm@10.28.0+sha512.05df71d1421f21399e053fde567cea34d446fa02c76571441bfc1c7956e98e363088982d940465fd34480d4d90a0668bc12362f8aa88000a64e83d0b0e47be48"
 }

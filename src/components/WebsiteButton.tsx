@@ -1,17 +1,13 @@
 import React from "react"
 import { ExternalLink } from "lucide-react"
 
-import { API_CONF } from "~src/utils/constants"
-import type { WebsiteButtonProps } from "~src/types"
+import { siteLink } from "~src/lib/config"
 
-export function WebsiteButton({ onClick }: WebsiteButtonProps) {
+export function WebsiteButton() {
     const [isHovered, setIsHovered] = React.useState(false)
 
     const handleClick = async () => {
-        if (onClick) {
-            await onClick()
-        }
-        window.open(API_CONF.WEBSITE_URL, "_blank")
+        window.open(siteLink("/"), "_blank")
     }
 
     return (

@@ -1,55 +1,12 @@
-import React, { useEffect, useState } from "react"
+import React from "react"
 import { Calendar, Clock, Globe } from "lucide-react"
 
 import { TIMEZONES } from "~src/utils/constants"
-import { storageService } from "~src/services/storage"
-import { getComposeId } from "~src/utils/helpers"
-import type { CampaignDropdownProps, TimeSettings } from "~src/types"
+import type { CampaignDropdownProps, Schedule } from "~src/types"
 
-export const CampaignDropdown = ({ isVisible }: CampaignDropdownProps) => {
+export const CampaignDropdown = ({ isVisible, value: values, onChange }: CampaignDropdownProps) => {
     const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
-
-    const [values, setValues] = useState<TimeSettings>({
-        date: '',
-        time: '',
-        timezone: userTimezone,
-    })
-    const [loading, setLoading] = useState<boolean>(true)
-
-    useEffect(() => {
-        const loadInitValues = async () => {
-            try {
-                const composeWindowId = await getComposeId()
-                const savedTimeSettings = await storageService.getTimeSettings(composeWindowId)
-
-                if (savedTimeSettings) {
-                    setValues(savedTimeSettings)
-                }
-            } catch (e) {
-                console.error(`[Airletter] Failed to load time settings: ${e}`)
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        loadInitValues()
-    }, [])
-
-    useEffect(() => {
-        if (loading) return
-
-        const saveTimeSettings = async () => {
-            try {
-                const composeWindowId = await getComposeId()
-
-                await storageService.setTimeSettings(composeWindowId, values)
-            } catch (e) {
-                console.error(`[Airletter] Failed to save time settings: ${e}`)
-            }
-        }
-
-        saveTimeSettings()
-    }, [values, loading]);
+    const setValues = (update: (prev: Schedule) => Schedule) => onChange(update(values))
 
     if (!isVisible) return null
 
@@ -122,6 +79,7 @@ export const CampaignDropdown = ({ isVisible }: CampaignDropdownProps) => {
                         type="date"
                         id="campaign-date"
                         name="campaign-date"
+                        value={values.date}
                         style={{
                             width: '100%',
                             padding: '10px 12px',
@@ -164,6 +122,7 @@ export const CampaignDropdown = ({ isVisible }: CampaignDropdownProps) => {
                         type="time"
                         id="campaign-time"
                         name="campaign-time"
+                        value={values.time}
                         style={{
                             width: '100%',
                             padding: '10px 12px',

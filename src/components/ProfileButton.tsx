@@ -1,14 +1,13 @@
 import { User } from "lucide-react"
 import React from "react"
 
-import { API_CONF } from "~src/utils/constants"
-import type { ProfileButtonProps } from "~src/types"
+import { siteLink } from "~src/lib/config"
 
-export function ProfileButton({onClick}: ProfileButtonProps) {
+export function ProfileButton() {
   const [isHovered, setIsHovered] = React.useState(false)
 
   const handleClick = async () => {
-    window.open(`${API_CONF.WEBSITE_URL}/en/profile`, "_blank")
+    window.open(siteLink("/dashboard"), "_blank")
   }
 
   return (

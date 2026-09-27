@@ -1,165 +1,99 @@
-import { GMAIL_SELECTORS } from "~src/utils/constants"
-import type { AttachmentDataToParse, EmailData } from "~src/types";
-import { storageService } from "~src/services/storage"
-import { getComposeId } from "~src/utils/helpers";
+// Everything that reads or changes Gmail's DOM lives here, so selector
+// changes on Gmail's side need fixing in one place.
 
-class GmailService {
-    async getFilesFromGmailMessageWindow(
-        composeWindow: HTMLElement,
-    ): Promise<AttachmentDataToParse[]> {
-        const hrefs: AttachmentDataToParse[] = []
-        const attachmentNodes = composeWindow.querySelectorAll(GMAIL_SELECTORS.ATTACHMENT_NODES);
+import { getList, listChipAddress, parseListChip } from "./lists"
 
-        for (const node of attachmentNodes) {
-            const attachmentInput = node.querySelector("input[name='attach']");
+const SEL = {
+  composeButton: ".T-I.T-I-KE.L3",
+  composeWindow: ".AD, .M9, [data-compose-id]",
+  sendButton: ".T-I.J-J5-Ji.aoO.v7.T-I-atl.L3",
+  recipientInput: ".agP.aFw",
+  recipientChips: ".afV[data-hovercard-id], div[peoplekit-id][data-hovercard-id]",
+  subject: 'input[name="subject"]',
+  body: 'div[role="textbox"][contenteditable="true"]',
+  attachments: ".dL"
+} as const
 
-            if (attachmentInput) {
-                const link = node.querySelector("a") as HTMLAnchorElement;
+export { SEL as GMAIL_SELECTORS }
 
-                if (link && link.querySelectorAll("div").length === 2) {
-                    const divs = link.querySelectorAll("div");
-                    const filename = divs[0].innerText
-                    const filesize = divs[1].innerText
+export type Draft = { recipients: string[]; subject: string; body: string }
+export type AttachmentLink = { url: string; filename: string }
 
-                    hrefs.push({ url: link.href, filename, filesize })
-                }
-            }
-        }
+/** Finds the compose window that contains the element (our inline button) */
+export function findComposeWindow(el: Element): HTMLElement | null {
+  const direct = el.closest<HTMLElement>(SEL.composeWindow)
+  if (direct) return direct
 
-        return hrefs
-    }
-
-    async getEmailDataFromGmailMessagesWindow(
-        composeWindow: HTMLElement,
-    ): Promise<EmailData> {
-        const emailData = {
-            recipients: [],
-            subject: null,
-            body: null,
-            date: null,
-            time: null,
-            timezone: null
-        }
-
-        const recipientsNodes = composeWindow.querySelectorAll(
-            '.afV[data-hovercard-id], div[peoplekit-id][data-hovercard-id]'
-        );
-
-        if (emailData.recipients.length === 0 && recipientsNodes.length > 0) {
-            emailData.recipients = Array.from(recipientsNodes)
-                .map(node => node.getAttribute("data-hovercard-id"))
-                .filter(email =>
-                    email &&
-                    email.includes('@') &&
-                    email.includes('.') &&
-                    email !== "undefined"
-                ) as string[];
-        }
-
-        for (const [index, rep] of emailData.recipients.entries()) {
-            if (
-                typeof rep === "string" &&
-                rep.includes("recipients") &&
-                rep.includes("airletter.invalid")
-            ) {
-                const uniqueId = rep.split("id_")[1]?.split("@")[0]
-
-                if (!uniqueId) continue
-
-                const data = await storageService.getParsedEmailsById(uniqueId)
-
-                if (data?.emails) {
-                    emailData.recipients.splice(index, 1)
-                    emailData.recipients.push(...data.emails)
-                }
-            }
-        }
-
-        const subjectField = composeWindow.querySelector(
-            'input[name="subject"]'
-        ) as HTMLInputElement
-        emailData.subject = subjectField.value
-
-        const messageBody = composeWindow.querySelector(
-            'div[role="textbox"][contenteditable="true"]'
-        ) as HTMLInputElement
-        emailData.body = messageBody.innerHTML
-
-        const composeWindowId = await getComposeId()
-        const timeSettings = await storageService.getTimeSettings(composeWindowId)
-
-        if (!timeSettings) {
-            emailData.date = (document.querySelector(
-                "#campaign-date"
-            ) as HTMLInputElement).value
-            emailData.time = (document.querySelector(
-                "#campaign-time"
-            ) as HTMLInputElement).value
-            emailData.timezone = (document.querySelector(
-                "#campaign-timezone"
-            ) as HTMLInputElement).value
-        } else {
-            emailData.date = timeSettings.date
-            emailData.time = timeSettings.time
-            emailData.timezone = timeSettings.timezone
-        }
-
-        console.log(`Email data: ${emailData}`)
-
-        return emailData
-    }
-
-    async findComposeWindows(): Promise<HTMLElement[]> {
-        const composeWindows = document.querySelectorAll(GMAIL_SELECTORS.COMPOSE_WINDOW);
-        return Array.from(composeWindows) as HTMLInputElement[]
-    }
-
-    async openComposeWindow(): Promise<void> {
-        const composeButton = document.querySelector(GMAIL_SELECTORS.COMPOSE_WINDOW_BUTTON) as HTMLButtonElement;
-        if (composeButton) {
-            composeButton.click();
-        }
-    }
-
-    async addEmailChip(
-        sheetId: string,
-        count: number,
-        composeWindow: HTMLElement | Document,
-    ): Promise<boolean> {
-        const recipientField = composeWindow.querySelector(
-            GMAIL_SELECTORS.RECIPIENT_FIELD
-        ) as HTMLInputElement;
-
-        if (!recipientField) {
-            console.error("Recipient field is missing");
-            return false;
-        }
-
-        const activeElement = document.activeElement;
-        recipientField.focus()
-
-        const emailString = `${count}-recipients-id_${sheetId}@airletter.invalid`
-        recipientField.value = emailString
-
-        const events = [
-            new InputEvent("input", { bubbles: true }),
-            new KeyboardEvent("keydown", {
-                bubbles: true,
-                cancelable: true,
-                code: "Enter",
-            }),
-        ]
-
-        events.forEach(event => {
-            recipientField.dispatchEvent(event)
-        })
-
-        if (activeElement) {
-            ;(activeElement as HTMLInputElement).focus()
-        }
-
-        return true;
-    }
+  // content-script UI is mounted next to the send button, possibly outside
+  // the compose DOM subtree: fall back to what is rendered under the element
+  const rect = el.getBoundingClientRect()
+  for (const hit of document.elementsFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)) {
+    const w = hit.closest<HTMLElement>(SEL.composeWindow)
+    if (w) return w
+  }
+  return null
 }
 
-export const gmailService = new GmailService()
+export function findComposeWindows(): HTMLElement[] {
+  return Array.from(document.querySelectorAll<HTMLElement>(SEL.composeWindow))
+}
+
+export async function openComposeWindow(): Promise<HTMLElement | null> {
+  document.querySelector<HTMLElement>(SEL.composeButton)?.click()
+  for (let i = 0; i < 20; i++) {
+    await new Promise((r) => setTimeout(r, 100))
+    const w = findComposeWindows()[0]
+    if (w) return w
+  }
+  return null
+}
+
+/** Reads recipients (with imported lists expanded), subject and HTML body */
+export async function readDraft(compose: HTMLElement): Promise<Draft> {
+  const raw = Array.from(compose.querySelectorAll(SEL.recipientChips))
+    .map((n) => n.getAttribute("data-hovercard-id") ?? "")
+    .filter((e) => e.includes("@"))
+
+  const recipients: string[] = []
+  for (const address of raw) {
+    const listId = parseListChip(address)
+    if (!listId) {
+      recipients.push(address)
+      continue
+    }
+    const list = await getList(listId)
+    if (list) recipients.push(...list.emails)
+  }
+
+  return {
+    recipients: Array.from(new Set(recipients.map((r) => r.trim().toLowerCase()))),
+    subject: compose.querySelector<HTMLInputElement>(SEL.subject)?.value ?? "",
+    body: compose.querySelector<HTMLElement>(SEL.body)?.innerHTML ?? ""
+  }
+}
+
+/** Attachments already uploaded to the draft */
+export function readAttachmentLinks(compose: HTMLElement): AttachmentLink[] {
+  const links: AttachmentLink[] = []
+  for (const node of compose.querySelectorAll(SEL.attachments)) {
+    if (!node.querySelector("input[name='attach']")) continue
+    const link = node.querySelector<HTMLAnchorElement>("a")
+    const name = link?.querySelector("div")?.textContent?.trim()
+    if (link?.href && name) links.push({ url: link.href, filename: name })
+  }
+  return links
+}
+
+/** Adds a placeholder chip for an imported list to the "To" field */
+export function addListChip(compose: HTMLElement, listId: string, count: number): boolean {
+  const input = compose.querySelector<HTMLInputElement>(SEL.recipientInput)
+  if (!input) return false
+
+  const previous = document.activeElement as HTMLElement | null
+  input.focus()
+  input.value = listChipAddress(listId, count)
+  input.dispatchEvent(new InputEvent("input", { bubbles: true }))
+  input.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "Enter", code: "Enter" }))
+  previous?.focus()
+  return true
+}

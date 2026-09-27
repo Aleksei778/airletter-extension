@@ -10,7 +10,7 @@ export const SheetsModalWindow = ({
 }: SheetsModalWindowProps) => {
   const [spreadsheetId, setSpreadsheetId] = useState("")
   const [sheetName, setSheetName] = useState("Sheet1")
-  const [range, setRange] = useState("A2:A10")
+  const [range, setRange] = useState("A2:A")
   const [isCloseHovered, setIsCloseHovered] = useState(false)
   const [isSubmitHovered, setIsSubmitHovered] = useState(false)
 
@@ -125,7 +125,7 @@ export const SheetsModalWindow = ({
         >
           <input
             type="text"
-            placeholder="Enter Spreadsheet ID"
+            placeholder="Spreadsheet link or ID"
             value={spreadsheetId}
             onChange={(e) => setSpreadsheetId(e.target.value)}
             required
@@ -175,7 +175,7 @@ export const SheetsModalWindow = ({
 
             <input
               type="text"
-              placeholder="Range (e.g., A2:A10)"
+              placeholder="Column range (e.g., A2:A)"
               value={range}
               onChange={(e) => setRange(e.target.value)}
               required
