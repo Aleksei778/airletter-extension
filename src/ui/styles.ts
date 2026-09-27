@@ -96,7 +96,8 @@ button {
   height: 15px;
 }
 
-.al-icon-btn {
+/* round companion of the Airletter pill: outlined, filled when active */
+.al-round-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -104,28 +105,24 @@ button {
   height: 36px;
   border: none;
   border-radius: 50%;
-  background: transparent;
-  color: #3c4043;
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s;
-}
-.al-icon-btn:hover,
-.al-icon-btn[aria-expanded="true"] {
-  background: rgb(0 0 0 / 0.07);
+  background: var(--paper);
   color: var(--ink);
+  box-shadow: inset 0 0 0 1.5px var(--ink);
+  cursor: pointer;
+  transition: transform 0.25s var(--ease), background 0.2s, color 0.2s;
 }
-.al-icon-btn.is-set::after {
-  content: "";
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  margin: -14px -14px 0 0;
-  border-radius: 50%;
+.al-round-btn:hover {
+  transform: scale(1.06);
+}
+.al-round-btn:hover,
+.al-round-btn[aria-expanded="true"],
+.al-round-btn.is-set {
   background: var(--ink);
+  color: var(--paper);
 }
-.al-icon-btn svg {
-  width: 18px;
-  height: 18px;
+.al-round-btn svg {
+  width: 17px;
+  height: 17px;
 }
 
 .al-mark-btn {

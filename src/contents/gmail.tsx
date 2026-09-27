@@ -85,7 +85,7 @@ export default function ComposeActions() {
   }
 
   return (
-    <div ref={containerRef} className="al-root" lang={locale} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+    <div ref={containerRef} className="al-root" lang={locale} style={{ display: "flex", alignItems: "center", gap: 6 }}>
       <AirletterButton busy={busy} onClick={start} />
       <SchedulePopover value={schedule} onChange={setSchedule} />
     </div>

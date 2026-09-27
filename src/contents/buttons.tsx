@@ -67,7 +67,7 @@ export default function Toolbar() {
   return (
     <div className="al-root" lang={locale} style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: 8 }}>
       <button
-        className="al-icon-btn"
+        className="al-round-btn"
         title={t.sheets.button}
         aria-label={t.sheets.button}
         onClick={() => emit({ type: "OPEN_SHEETS_MODAL" })}>

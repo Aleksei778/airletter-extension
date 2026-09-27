@@ -20,10 +20,10 @@ export function SchedulePopover({ value, onChange }: Props) {
   return (
     <div ref={ref} style={{ position: "relative" }}>
       <button
-        className={`al-icon-btn ${isSet ? "is-set" : ""}`}
+        className={`al-round-btn ${isSet ? "is-set" : ""}`}
         aria-expanded={open}
         aria-label={t.schedule.button}
-        title={t.schedule.button}
+        title={isSet && preview ? t.schedule.at(preview) : t.schedule.button}
         onClick={toggle}>
         <ClockIcon />
       </button>
