@@ -1,20 +1,32 @@
-import type { PlasmoCSConfig, PlasmoGetInlineAnchor } from "plasmo"
+import { styles as styleText } from "~src/ui/styles"
+import type { PlasmoCSConfig, PlasmoGetInlineAnchor, PlasmoGetStyle } from "plasmo"
 import React, { useEffect, useState } from "react"
 
-import { ProfileButton } from "~src/components/ProfileButton"
-import { SheetsModalWindow } from "~src/components/SheetsModalWindow"
-import { SpreadsheetsButton } from "~src/components/SpreadsheetsButton"
+import { AccountCard } from "~src/components/AccountCard"
+import { SheetsDialog } from "~src/components/SheetsDialog"
 import { Toasts } from "~src/components/Toasts"
-import { WebsiteButton } from "~src/components/WebsiteButton"
-import { subscribe, toast } from "~src/lib/bus"
+import { emit, subscribe, toast } from "~src/lib/bus"
 import { showError } from "~src/lib/errors"
+import { t } from "~src/lib/i18n"
 import { send } from "~src/lib/messages"
 import { addListChip, findComposeWindows, openComposeWindow } from "~src/services/gmail"
 import { newListId, saveList } from "~src/services/lists"
+import { injectFonts } from "~src/ui/fonts"
+import { PlaneMark, SheetIcon } from "~src/ui/icons"
+import { usePopover } from "~src/ui/usePopover"
 
 export const config: PlasmoCSConfig = {
   matches: ["https://mail.google.com/*"]
 }
+
+export const getStyle: PlasmoGetStyle = () => {
+  const style = document.createElement("style")
+  style.textContent = styleText
+  return style
+}
+
+// the toolbar is mounted once per Gmail tab: declare the fonts for all Airletter UIs here
+injectFonts()
 
 /** Toolbar next to Gmail's search */
 export const getInlineAnchor: PlasmoGetInlineAnchor = () =>
@@ -29,8 +41,9 @@ export const getInlineAnchor: PlasmoGetInlineAnchor = () =>
     check()
   })
 
-export default function GmailToolbar() {
+export default function Toolbar() {
   const [showSheets, setShowSheets] = useState(false)
+  const account = usePopover<HTMLDivElement>()
 
   useEffect(() => subscribe((e) => e.type === "OPEN_SHEETS_MODAL" && setShowSheets(true)), [])
 
@@ -39,15 +52,12 @@ export default function GmailToolbar() {
       const { emails } = await send({ type: "PARSE_SHEET", spreadsheet, range })
 
       const compose = findComposeWindows()[0] ?? (await openComposeWindow())
-      if (!compose) {
-        toast({ kind: "error", text: "Open a new email and try again." })
-        return
-      }
+      if (!compose) return toast({ kind: "error", text: t.compose.noCompose })
 
       const id = newListId()
       await saveList(id, { spreadsheet, emails })
       addListChip(compose, id, emails.length)
-      toast({ kind: "success", text: `${emails.length} recipients added from the sheet.` })
+      toast({ kind: "success", text: t.sheets.added(emails.length) })
       setShowSheets(false)
     } catch (e) {
       showError(e)
@@ -55,15 +65,33 @@ export default function GmailToolbar() {
   }
 
   return (
-    <>
-      <div style={{ display: "flex", flexDirection: "row", gap: "8px", alignItems: "center" }}>
-        <ProfileButton />
-        <SpreadsheetsButton />
-        <WebsiteButton />
+    <div className="al-root" style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: 8 }}>
+      <button
+        className="al-icon-btn"
+        title={t.sheets.button}
+        aria-label={t.sheets.button}
+        onClick={() => emit({ type: "OPEN_SHEETS_MODAL" })}>
+        <SheetIcon />
+      </button>
+
+      <div ref={account.ref} style={{ position: "relative" }}>
+        <button
+          className="al-mark-btn"
+          title={t.account.button}
+          aria-label={t.account.button}
+          aria-expanded={account.open}
+          onClick={account.toggle}>
+          <PlaneMark />
+        </button>
+        {account.open && (
+          <div className="al-root al-panel al-popover down">
+            <AccountCard />
+          </div>
+        )}
       </div>
 
-      {showSheets && <SheetsModalWindow onSubmit={importSheet} onClose={() => setShowSheets(false)} />}
+      {showSheets && <SheetsDialog onSubmit={importSheet} onClose={() => setShowSheets(false)} />}
       <Toasts />
-    </>
+    </div>
   )
 }
