@@ -1,8 +1,7 @@
 {
   "name": "airletter-extension",
-  "displayName": "Airletter",
   "version": "0.0.1",
-  "description": "Airletter — bulk email campaigns from your own Gmail",
+  "description": "Bulk email campaigns from your own Gmail",
   "author": "aleksey_pr",
   "scripts": {
     "dev": "plasmo dev",
@@ -10,12 +9,10 @@
     "package": "plasmo package"
   },
   "dependencies": {
-    "@plasmohq/storage": "^1.15.0",
     "lucide-react": "^1.48.0",
     "plasmo": "0.90.5",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "sonner": "^2.0.8"
+    "react-dom": "^19.3.0"
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "4.7.1",
@@ -27,9 +24,10 @@
     "typescript": "5.9.3"
   },
   "manifest": {
-    "name": "Airletter",
+    "name": "__MSG_extensionName__",
+    "description": "__MSG_extensionDescription__",
+    "default_locale": "en",
     "version": "1.0",
-    "description": "Airletter — bulk email campaigns from your own Gmail",
     "host_permissions": [
       "https://mail.google.com/*",
       "https://mail-attachment.googleusercontent.com/*",
@@ -38,6 +36,16 @@
     "permissions": [
       "identity",
       "storage"
+    ],
+    "web_accessible_resources": [
+      {
+        "resources": [
+          "assets/fonts/*.woff2"
+        ],
+        "matches": [
+          "https://mail.google.com/*"
+        ]
+      }
     ]
   },
   "packageManager": "pnpm@10.28.0+sha512.05df71d1421f21399e053fde567cea34d446fa02c76571441bfc1c7956e98e363088982d940465fd34480d4d90a0668bc12362f8aa88000a64e83d0b0e47be48"
