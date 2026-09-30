@@ -9,7 +9,7 @@ import { emit, subscribe, toast } from "~src/lib/bus"
 import { showError } from "~src/lib/errors"
 import { locale, t } from "~src/lib/i18n"
 import { send } from "~src/lib/messages"
-import { addListChip, findComposeWindows, openComposeWindow } from "~src/services/gmail"
+import { addListChip, findComposeWindows, findToolbarAnchor, openComposeWindow } from "~src/services/gmail"
 import { newListId, saveList } from "~src/services/lists"
 import { injectFonts } from "~src/ui/fonts"
 import { PlaneMark, SheetIcon } from "~src/ui/icons"
@@ -33,7 +33,7 @@ export const getInlineAnchor: PlasmoGetInlineAnchor = () =>
   new Promise<Element>((resolve, reject) => {
     const started = Date.now()
     const check = () => {
-      const anchor = document.querySelector(".zo") ?? document.querySelector('[role="toolbar"]') ?? document.querySelector(".btC")
+      const anchor = findToolbarAnchor()
       if (anchor) resolve(anchor)
       else if (Date.now() - started > 15000) reject(new Error("Gmail toolbar not found"))
       else setTimeout(check, 200)

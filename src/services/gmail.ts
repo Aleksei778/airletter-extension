@@ -34,6 +34,38 @@ export function findComposeWindow(el: Element): HTMLElement | null {
   return null
 }
 
+// Gmail's own toolbars, from the most to the least preferred. The last two
+// also exist inside compose windows, so those matches are skipped.
+const TOOLBAR_ANCHORS = [".zo", '[role="toolbar"]', ".btC"]
+let toolbarAnchor: Element | null = null
+
+/**
+ * Where the Airletter toolbar goes. Plasmo asks again on every DOM change;
+ * a different answer mounts a second toolbar, so keep the first one while
+ * it is still in the page.
+ */
+export function findToolbarAnchor(): Element | null {
+  if (toolbarAnchor?.isConnected) return toolbarAnchor
+  toolbarAnchor = null
+  for (const selector of TOOLBAR_ANCHORS) {
+    const el = Array.from(document.querySelectorAll(selector)).find(
+      (el) => !el.closest(`${SEL.composeWindow}, [role="dialog"]`)
+    )
+    if (el) return (toolbarAnchor = el)
+  }
+  return null
+}
+
+/** The row with the send button, once per compose window */
+export function findSendRows(): Element[] {
+  const rows = new Set<Element>()
+  for (const btn of document.querySelectorAll(SEL.sendButton)) {
+    const row = btn.closest(".gU.Up")
+    if (row) rows.add(row)
+  }
+  return Array.from(rows)
+}
+
 export function findComposeWindows(): HTMLElement[] {
   return Array.from(document.querySelectorAll<HTMLElement>(SEL.composeWindow))
 }

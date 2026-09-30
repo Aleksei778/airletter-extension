@@ -9,7 +9,7 @@ import { siteLink } from "~src/lib/config"
 import { showError } from "~src/lib/errors"
 import { formatDateTime, locale, t } from "~src/lib/i18n"
 import { send, type AttachmentPayload } from "~src/lib/messages"
-import { findComposeWindow, GMAIL_SELECTORS, readAttachmentLinks, readDraft } from "~src/services/gmail"
+import { findComposeWindow, findSendRows, readAttachmentLinks, readDraft } from "~src/services/gmail"
 import type { Schedule } from "~src/types"
 
 export const config: PlasmoCSConfig = {
@@ -27,10 +27,7 @@ const MAX_ATTACHMENTS_BYTES = 18 * 1024 * 1024
 
 /** One Airletter button next to "Send" in every compose window */
 export const getInlineAnchorList: PlasmoGetInlineAnchorList = async () =>
-  Array.from(document.querySelectorAll(GMAIL_SELECTORS.sendButton))
-    .map((btn) => btn.closest(".gU.Up"))
-    .filter((el): el is Element => Boolean(el))
-    .map((element) => ({ element, insertPosition: "afterend" as const }))
+  findSendRows().map((element) => ({ element, insertPosition: "afterend" as const }))
 
 export default function ComposeActions() {
   const containerRef = useRef<HTMLDivElement>(null)
