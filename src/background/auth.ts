@@ -32,21 +32,27 @@ export async function isSignedIn(): Promise<boolean> {
 }
 
 /**
- * Google sign-in via the backend. The backend redirects to
- * https://<id>.chromiumapp.org/callback with a one-time code (never the JWTs),
- * which is exchanged for tokens. Our own `state` protects against a response
- * that we did not ask for.
+ * Sign-in in a web auth window: the user signs in on the website (email and
+ * password), connects Gmail if it is not connected yet, and the
+ * backend redirects to https://<id>.chromiumapp.org/callback with a one-time
+ * code (never the JWTs), which is exchanged for tokens. Our own `state`
+ * protects against a response that we did not ask for.
  */
 export async function login(): Promise<void> {
   const state = crypto.randomUUID()
-  const url = `${API_URL}/auth/google/login?source=extension&state=${state}`
+  const url = `${API_URL}/auth/extension/start?state=${state}`
 
   let redirect: string | undefined
   try {
     redirect = await chrome.identity.launchWebAuthFlow({ url, interactive: true })
   } catch (e) {
-    // the user closed the window
-    throw new ExtensionError("access_denied", String(e))
+    const message = e instanceof Error ? e.message : String(e)
+    console.warn("Airletter sign-in failed:", message)
+    // Chrome says "The user did not approve access." when the window is
+    // closed; anything else (e.g. "Authorization page could not be loaded."
+    // on an HTTP error) means the site or API is unreachable or misconfigured
+    const closed = /did not approve|closed/i.test(message)
+    throw new ExtensionError(closed ? "access_denied" : "signin_failed", message)
   }
   if (!redirect) throw new ExtensionError("unknown", "No redirect from sign-in")
 

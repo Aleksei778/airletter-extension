@@ -4,7 +4,7 @@ import { siteLink } from "~src/lib/config"
 import { showError } from "~src/lib/errors"
 import { t } from "~src/lib/i18n"
 import { ExtensionError, send, type Account } from "~src/lib/messages"
-import { ArrowIcon, GoogleIcon } from "~src/ui/icons"
+import { ArrowIcon } from "~src/ui/icons"
 
 type State = { kind: "loading" } | { kind: "signedOut" } | { kind: "ready"; account: Account }
 
@@ -53,8 +53,7 @@ export function AccountCard({ onError = showError }: { onError?: (e: unknown) =>
           {t.account.signInText}
         </p>
         <button className="al-btn" style={{ marginTop: 22 }} disabled={busy} onClick={run(() => send({ type: "LOGIN" }))}>
-          <GoogleIcon />
-          {t.account.signIn}
+          {t.account.signIn} <ArrowIcon />
         </button>
       </div>
     )

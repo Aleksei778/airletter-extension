@@ -56,6 +56,7 @@ export type ErrorCode =
   | "validation"
   | "missing_scopes"
   | "access_denied"
+  | "signin_failed" // the sign-in page could not be loaded
   | "network"
   | "unknown"
 
