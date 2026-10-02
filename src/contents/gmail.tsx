@@ -10,8 +10,8 @@ import { siteLink } from "~src/lib/config"
 import { showError } from "~src/lib/errors"
 import { formatDateTime, locale, t } from "~src/lib/i18n"
 import { send, type AttachmentPayload } from "~src/lib/messages"
-import { buildBody, InlineTooLarge, looksLikeHtmlCode, resolveMode, type BodyMode } from "~src/services/body"
-import { findComposeWindow, findSendRows, GMAIL_SELECTORS, readAttachmentLinks, readDraft } from "~src/services/gmail"
+import { buildBody, InlineTooLarge, type BodyMode } from "~src/services/body"
+import { findComposeWindow, findSendRows, readAttachmentLinks, readDraft } from "~src/services/gmail"
 import type { Schedule } from "~src/types"
 
 export const config: PlasmoCSConfig = {
@@ -40,14 +40,10 @@ export default function ComposeActions() {
     time: "",
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
   })
-  const [mode, setMode] = useState<BodyMode>("auto")
-
-  const compose = () => containerRef.current && findComposeWindow(containerRef.current)
-  const detectCode = () =>
-    looksLikeHtmlCode(compose()?.querySelector<HTMLElement>(GMAIL_SELECTORS.body)?.innerText ?? "")
+  const [mode, setMode] = useState<BodyMode>("rich")
 
   const start = async () => {
-    const el = compose()
+    const el = containerRef.current && findComposeWindow(containerRef.current)
     if (!el) return toast({ kind: "error", text: t.compose.notFound })
 
     setBusy(true)
@@ -73,7 +69,7 @@ export default function ComposeActions() {
 
       let body
       try {
-        body = await buildBody(resolveMode(mode, draft), draft, MAX_ATTACHMENTS_BYTES - total)
+        body = await buildBody(mode, draft, MAX_ATTACHMENTS_BYTES - total)
       } catch (e) {
         if (e instanceof InlineTooLarge) return toast({ kind: "error", text: t.compose.tooLarge })
         throw e
@@ -87,6 +83,7 @@ export default function ComposeActions() {
           subject: draft.subject,
           body: body.body,
           format: body.format,
+          locale,
           attachments: [...attachments, ...body.inline],
           ...schedule
         }
@@ -110,7 +107,7 @@ export default function ComposeActions() {
   return (
     <div ref={containerRef} className="al-root" lang={locale} style={{ display: "flex", alignItems: "center", gap: 6 }}>
       <AirletterButton busy={busy} onClick={start} />
-      <FormatPopover value={mode} onChange={setMode} detectCode={detectCode} />
+      <FormatPopover value={mode} onChange={setMode} />
       <SchedulePopover value={schedule} onChange={setSchedule} />
     </div>
   )

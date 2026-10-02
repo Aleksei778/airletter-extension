@@ -23,6 +23,8 @@ export type CampaignPayload = {
   body: string
   // "html" (default): body is HTML; "text": body is sent as plain text
   format: "html" | "text"
+  // language of the "Sent with Airletter" footer on the trial
+  locale: "ru" | "en"
   recipients: string[]
   attachments: AttachmentPayload[]
   // empty = send now; otherwise local date/time in the given IANA timezone
@@ -57,6 +59,7 @@ export type ErrorCode =
   | "unauthorized" // not signed in or session expired
   | "reauth_required" // Google access revoked
   | "no_subscription"
+  | "paid_plan_required" // a feature the trial does not include
   | "validation"
   | "missing_scopes"
   | "access_denied"

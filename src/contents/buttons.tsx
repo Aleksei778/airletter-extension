@@ -8,7 +8,7 @@ import { Toasts } from "~src/components/Toasts"
 import { emit, subscribe, toast } from "~src/lib/bus"
 import { showError } from "~src/lib/errors"
 import { locale, t } from "~src/lib/i18n"
-import { send } from "~src/lib/messages"
+import { ExtensionError, send } from "~src/lib/messages"
 import { addListChip, findComposeWindows, findToolbarAnchor, openComposeWindow } from "~src/services/gmail"
 import { newListId, saveList } from "~src/services/lists"
 import { injectFonts } from "~src/ui/fonts"
@@ -47,6 +47,15 @@ export default function Toolbar() {
 
   useEffect(() => subscribe((e) => e.type === "OPEN_SHEETS_MODAL" && setShowSheets(true)), [])
 
+  const openSheets = async () => {
+    // the backend refuses the import on the trial anyway; say so before the
+    // user fills in the form. Unknown plan (signed out, offline): show the form.
+    const plan = await send({ type: "ACCOUNT" }).then((a) => a.plan, () => undefined)
+    if (plan === null) return showError(new ExtensionError("no_subscription", "no plan"))
+    if (plan === "trial") return showError(new ExtensionError("paid_plan_required", "trial"))
+    emit({ type: "OPEN_SHEETS_MODAL" })
+  }
+
   const importSheet = async (spreadsheet: string, range: string) => {
     try {
       const { emails } = await send({ type: "PARSE_SHEET", spreadsheet, range })
@@ -70,7 +79,7 @@ export default function Toolbar() {
         className="al-round-btn"
         title={t.sheets.button}
         aria-label={t.sheets.button}
-        onClick={() => emit({ type: "OPEN_SHEETS_MODAL" })}>
+        onClick={openSheets}>
         <SheetIcon />
       </button>
 

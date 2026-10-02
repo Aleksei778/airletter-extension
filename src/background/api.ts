@@ -40,7 +40,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 function errorCode(status: number, code?: string): ErrorCode {
-  if (code === "reauth_required" || code === "no_subscription") return code
+  if (code === "reauth_required" || code === "no_subscription" || code === "paid_plan_required") return code
   if (status === 401) return "unauthorized"
   if (status === 402) return "no_subscription"
   if (status === 400 || status === 413 || status === 422) return "validation"

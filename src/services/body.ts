@@ -5,28 +5,10 @@ import { send, type AttachmentPayload } from "~src/lib/messages"
 
 import type { Draft } from "./gmail"
 
-/** auto: HTML code if the body looks like it, Gmail formatting otherwise */
-export type BodyMode = "auto" | "rich" | "code" | "text"
+/** rich: what the compose window shows; code: the body is HTML source; text: plain text */
+export type BodyMode = "rich" | "code" | "text"
 
 export type Body = { body: string; format: "html" | "text"; inline: AttachmentPayload[] }
-
-/**
- * Pasted HTML templates show up in the compose box as text. They start with a
- * doctype or <html>, or are mostly markup: at least a few tags and the text
- * itself begins with one.
- */
-export function looksLikeHtmlCode(text: string): boolean {
-  const s = text.trim()
-  if (/^<!doctype\s+html|^<html[\s>]/i.test(s)) return true
-  if (!s.startsWith("<")) return false
-  const tags = s.match(/<\/?[a-z][a-z0-9-]*(\s[^<>]*)?\/?>/gi) ?? []
-  return tags.length >= 3 && /<\/[a-z][a-z0-9-]*>\s*$/i.test(s)
-}
-
-export function resolveMode(mode: BodyMode, draft: Draft): Exclude<BodyMode, "auto"> {
-  if (mode !== "auto") return mode
-  return looksLikeHtmlCode(draft.text) ? "code" : "rich"
-}
 
 /**
  * Builds the body for the chosen mode. Images pasted into the compose box
@@ -34,7 +16,7 @@ export function resolveMode(mode: BodyMode, draft: Draft): Exclude<BodyMode, "au
  * are downloaded and attached inline (cid:) instead. `budget` is how many
  * bytes the images may take together.
  */
-export async function buildBody(mode: Exclude<BodyMode, "auto">, draft: Draft, budget: number): Promise<Body> {
+export async function buildBody(mode: BodyMode, draft: Draft, budget: number): Promise<Body> {
   if (mode === "text") return { body: draft.text, format: "text", inline: [] }
   if (mode === "code") return { body: draft.text, format: "html", inline: [] }
 

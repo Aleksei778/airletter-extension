@@ -19,12 +19,10 @@ const ru = {
     button: "Формат письма",
     title: "Формат письма",
     modes: {
-      auto: ["Авто", "HTML-код, если письмо начинается с разметки, иначе — как в Gmail."],
       rich: ["Как в Gmail", "Форматирование, ссылки и картинки из окна письма."],
       code: ["HTML-код", "Вставьте код шаблона в письмо — получатели увидят свёрстанное письмо."],
       text: ["Простой текст", "Без форматирования и картинок."]
-    },
-    detected: "Сейчас в письме HTML-код — отправим его как свёрстанное письмо."
+    }
   },
   sheets: {
     button: "Импорт из Google Таблиц",
@@ -70,6 +68,7 @@ const ru = {
     unauthorized: "Войдите в Airletter, чтобы отправлять кампании.",
     reauth_required: "Gmail не подключён или доступ отозван. Войдите и подключите Gmail.",
     no_subscription: "Нет активного тарифа.",
+    paid_plan_required: "Импорт из Google Таблиц доступен на платных тарифах. На пробном добавляйте адреса в поле «Кому».",
     missing_scopes: "При входе разрешите Airletter отправлять письма от вашего имени.",
     access_denied: "Вход отменён.",
     signin_failed: "Не удалось открыть страницу входа. Проверьте соединение и попробуйте ещё раз.",
@@ -103,12 +102,10 @@ const en: Dict = {
     button: "Email format",
     title: "Email format",
     modes: {
-      auto: ["Auto", "HTML code if the email starts with markup, Gmail formatting otherwise."],
       rich: ["As in Gmail", "Formatting, links and images from the compose window."],
       code: ["HTML code", "Paste template code into the email and recipients get the rendered email."],
       text: ["Plain text", "No formatting or images."]
-    },
-    detected: "The email contains HTML code — it will be sent rendered."
+    }
   },
   sheets: {
     button: "Import from Google Sheets",
@@ -154,6 +151,7 @@ const en: Dict = {
     unauthorized: "Sign in to Airletter to send campaigns.",
     reauth_required: "Gmail is not connected or access was revoked. Sign in and connect Gmail.",
     no_subscription: "No active plan.",
+    paid_plan_required: "Google Sheets import is available on paid plans. On the trial, add addresses to the To field.",
     missing_scopes: "Allow Airletter to send email on your behalf when signing in.",
     access_denied: "Sign-in cancelled.",
     signin_failed: "Could not open the sign-in page. Check your connection and try again.",

@@ -12,9 +12,10 @@ export function showError(e: unknown) {
     case "reauth_required":
       return toast({ kind: "error", text: t.errors[code], action: { label: t.errors.signIn, login: true } })
     case "no_subscription":
+    case "paid_plan_required":
       return toast({
         kind: "error",
-        text: t.errors.no_subscription,
+        text: t.errors[code],
         action: { label: t.errors.choosePlan, href: siteLink("/dashboard#upgrade") }
       })
     case "validation":
