@@ -16,7 +16,8 @@ const SEL = {
 
 export { SEL as GMAIL_SELECTORS }
 
-export type Draft = { recipients: string[]; subject: string; body: string }
+/** html: what Gmail renders (rich formatting); text: what the user typed, without formatting */
+export type Draft = { recipients: string[]; subject: string; html: string; text: string }
 export type AttachmentLink = { url: string; filename: string }
 
 /** Finds the compose window that contains the element (our inline button) */
@@ -80,7 +81,7 @@ export async function openComposeWindow(): Promise<HTMLElement | null> {
   return null
 }
 
-/** Reads recipients (with imported lists expanded), subject and HTML body */
+/** Reads recipients (with imported lists expanded), subject and the body as HTML and as text */
 export async function readDraft(compose: HTMLElement): Promise<Draft> {
   const raw = Array.from(compose.querySelectorAll(SEL.recipientChips))
     .map((n) => n.getAttribute("data-hovercard-id") ?? "")
@@ -97,10 +98,13 @@ export async function readDraft(compose: HTMLElement): Promise<Draft> {
     if (list) recipients.push(...list.emails)
   }
 
+  const body = compose.querySelector<HTMLElement>(SEL.body)
   return {
     recipients: Array.from(new Set(recipients.map((r) => r.trim().toLowerCase()))),
     subject: compose.querySelector<HTMLInputElement>(SEL.subject)?.value ?? "",
-    body: compose.querySelector<HTMLElement>(SEL.body)?.innerHTML ?? ""
+    html: body?.innerHTML ?? "",
+    // innerText keeps line breaks, so pasted HTML code comes back as written
+    text: body?.innerText ?? ""
   }
 }
 

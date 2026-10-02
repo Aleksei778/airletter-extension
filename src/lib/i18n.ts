@@ -15,6 +15,17 @@ const ru = {
     at: (when: string) => `Отправка начнётся ${when}.`,
     clear: "Очистить"
   },
+  format: {
+    button: "Формат письма",
+    title: "Формат письма",
+    modes: {
+      auto: ["Авто", "HTML-код, если письмо начинается с разметки, иначе — как в Gmail."],
+      rich: ["Как в Gmail", "Форматирование, ссылки и картинки из окна письма."],
+      code: ["HTML-код", "Вставьте код шаблона в письмо — получатели увидят свёрстанное письмо."],
+      text: ["Простой текст", "Без форматирования и картинок."]
+    },
+    detected: "Сейчас в письме HTML-код — отправим его как свёрстанное письмо."
+  },
   sheets: {
     button: "Импорт из Google Таблиц",
     title: "Получатели из Google Таблиц",
@@ -47,7 +58,8 @@ const ru = {
     noRecipients: "Добавьте получателей в поле «Кому» или импортируйте Google Таблицу.",
     noSubject: "Добавьте тему письма.",
     halfSchedule: "Укажите и дату, и время — или очистите их, чтобы отправить сразу.",
-    tooLarge: "Вложения больше 18 МБ.",
+    tooLarge: "Вложения и картинки больше 18 МБ.",
+    emptyBody: "Письмо пустое.",
     noCompose: "Откройте новое письмо и повторите.",
     started: (n: number) => `Отправляем ${n} ${plural(n, "письмо", "письма", "писем")}. Прогресс — в кабинете.`,
     scheduled: (n: number, when: string) => `Запланировано: ${n} ${plural(n, "письмо", "письма", "писем")}, ${when}.`,
@@ -87,6 +99,17 @@ const en: Dict = {
     at: (when: string) => `Sending starts ${when}.`,
     clear: "Clear"
   },
+  format: {
+    button: "Email format",
+    title: "Email format",
+    modes: {
+      auto: ["Auto", "HTML code if the email starts with markup, Gmail formatting otherwise."],
+      rich: ["As in Gmail", "Formatting, links and images from the compose window."],
+      code: ["HTML code", "Paste template code into the email and recipients get the rendered email."],
+      text: ["Plain text", "No formatting or images."]
+    },
+    detected: "The email contains HTML code — it will be sent rendered."
+  },
   sheets: {
     button: "Import from Google Sheets",
     title: "Recipients from Google Sheets",
@@ -119,7 +142,8 @@ const en: Dict = {
     noRecipients: "Add recipients to the To field or import a Google Sheet.",
     noSubject: "Add a subject.",
     halfSchedule: "Set both date and time, or clear them to send now.",
-    tooLarge: "Attachments are larger than 18 MB.",
+    tooLarge: "Attachments and images are larger than 18 MB.",
+    emptyBody: "The email is empty.",
     noCompose: "Open a new email and try again.",
     started: (n: number) => `Sending ${n} ${n === 1 ? "email" : "emails"}. Track progress in the dashboard.`,
     scheduled: (n: number, when: string) => `Scheduled: ${n} ${n === 1 ? "email" : "emails"}, ${when}.`,

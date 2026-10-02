@@ -14,11 +14,15 @@ export type AttachmentPayload = {
   filename: string
   mimetype: string
   content: string // base64
+  // set for images shown inside the body as <img src="cid:...">
+  content_id?: string
 }
 
 export type CampaignPayload = {
   subject: string
   body: string
+  // "html" (default): body is HTML; "text": body is sent as plain text
+  format: "html" | "text"
   recipients: string[]
   attachments: AttachmentPayload[]
   // empty = send now; otherwise local date/time in the given IANA timezone

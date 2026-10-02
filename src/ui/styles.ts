@@ -289,6 +289,56 @@ button {
 .al-input::placeholder {
   color: #5c5c5c;
 }
+/* radio list: an outlined circle, filled with a dot when chosen */
+.al-options {
+  display: grid;
+  gap: 2px;
+  margin-top: 14px;
+}
+.al-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.al-option:hover {
+  background: var(--deep);
+}
+.al-radio {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px var(--line);
+  transition: box-shadow 0.2s;
+}
+.al-option:hover .al-radio {
+  box-shadow: inset 0 0 0 1.5px var(--mute);
+}
+.al-option[aria-checked="true"] .al-radio {
+  box-shadow: inset 0 0 0 1.5px var(--paper), inset 0 0 0 4.5px var(--ink), inset 0 0 0 8px var(--paper);
+}
+.al-option-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+}
+.al-option-hint {
+  display: block;
+  margin-top: 2px;
+  color: var(--mute);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .al-row {
   display: flex;
   gap: 10px;

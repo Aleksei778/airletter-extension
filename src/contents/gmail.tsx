@@ -3,13 +3,15 @@ import type { PlasmoCSConfig, PlasmoGetInlineAnchorList, PlasmoGetStyle } from "
 import React, { useRef, useState } from "react"
 
 import { AirletterButton } from "~src/components/AirletterButton"
+import { FormatPopover } from "~src/components/FormatPopover"
 import { SchedulePopover } from "~src/components/SchedulePopover"
 import { toast } from "~src/lib/bus"
 import { siteLink } from "~src/lib/config"
 import { showError } from "~src/lib/errors"
 import { formatDateTime, locale, t } from "~src/lib/i18n"
 import { send, type AttachmentPayload } from "~src/lib/messages"
-import { findComposeWindow, findSendRows, readAttachmentLinks, readDraft } from "~src/services/gmail"
+import { buildBody, InlineTooLarge, looksLikeHtmlCode, resolveMode, type BodyMode } from "~src/services/body"
+import { findComposeWindow, findSendRows, GMAIL_SELECTORS, readAttachmentLinks, readDraft } from "~src/services/gmail"
 import type { Schedule } from "~src/types"
 
 export const config: PlasmoCSConfig = {
@@ -38,17 +40,22 @@ export default function ComposeActions() {
     time: "",
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
   })
+  const [mode, setMode] = useState<BodyMode>("auto")
+
+  const compose = () => containerRef.current && findComposeWindow(containerRef.current)
+  const detectCode = () =>
+    looksLikeHtmlCode(compose()?.querySelector<HTMLElement>(GMAIL_SELECTORS.body)?.innerText ?? "")
 
   const start = async () => {
-    const compose = containerRef.current && findComposeWindow(containerRef.current)
-    if (!compose) return toast({ kind: "error", text: t.compose.notFound })
+    const el = compose()
+    if (!el) return toast({ kind: "error", text: t.compose.notFound })
 
     setBusy(true)
     try {
       const { signedIn } = await send({ type: "AUTH_STATUS" })
       if (!signedIn) await send({ type: "LOGIN" })
 
-      const draft = await readDraft(compose)
+      const draft = await readDraft(el)
       if (draft.recipients.length === 0) return toast({ kind: "error", text: t.compose.noRecipients })
       if (!draft.subject.trim()) return toast({ kind: "error", text: t.compose.noSubject })
       if (Boolean(schedule.date) !== Boolean(schedule.time)) {
@@ -57,14 +64,33 @@ export default function ComposeActions() {
 
       const attachments: AttachmentPayload[] = []
       let total = 0
-      for (const link of readAttachmentLinks(compose)) {
+      for (const link of readAttachmentLinks(el)) {
         const file = await send({ type: "FETCH_ATTACHMENT", url: link.url })
         total += file.size
         if (total > MAX_ATTACHMENTS_BYTES) return toast({ kind: "error", text: t.compose.tooLarge })
         attachments.push({ filename: link.filename, mimetype: file.mimetype, content: file.content })
       }
 
-      const res = await send({ type: "START_CAMPAIGN", campaign: { ...draft, attachments, ...schedule } })
+      let body
+      try {
+        body = await buildBody(resolveMode(mode, draft), draft, MAX_ATTACHMENTS_BYTES - total)
+      } catch (e) {
+        if (e instanceof InlineTooLarge) return toast({ kind: "error", text: t.compose.tooLarge })
+        throw e
+      }
+      if (!body.body.trim()) return toast({ kind: "error", text: t.compose.emptyBody })
+
+      const res = await send({
+        type: "START_CAMPAIGN",
+        campaign: {
+          recipients: draft.recipients,
+          subject: draft.subject,
+          body: body.body,
+          format: body.format,
+          attachments: [...attachments, ...body.inline],
+          ...schedule
+        }
+      })
 
       const text = schedule.date
         ? t.compose.scheduled(res.total, formatDateTime(res.scheduledAt))
@@ -84,6 +110,7 @@ export default function ComposeActions() {
   return (
     <div ref={containerRef} className="al-root" lang={locale} style={{ display: "flex", alignItems: "center", gap: 6 }}>
       <AirletterButton busy={busy} onClick={start} />
+      <FormatPopover value={mode} onChange={setMode} detectCode={detectCode} />
       <SchedulePopover value={schedule} onChange={setSchedule} />
     </div>
   )

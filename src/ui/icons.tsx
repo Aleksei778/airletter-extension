@@ -37,3 +37,9 @@ export const ArrowIcon = ({ className }: P) => (
     <path d="M3 11 11 3M5 3h6v6" />
   </svg>
 )
+
+export const CodeIcon = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...stroke}>
+    <path d="M8.5 7 3.5 12l5 5M15.5 7l5 5-5 5M13.5 5l-3 14" />
+  </svg>
+)
