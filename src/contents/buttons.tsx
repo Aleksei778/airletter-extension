@@ -1,128 +1,106 @@
-import React, { useState, useEffect } from "react";
-import { toast } from "sonner";
-import type { PlasmoCSConfig, PlasmoGetInlineAnchor } from "plasmo";
+import { styles as styleText } from "~src/ui/styles"
+import type { PlasmoCSConfig, PlasmoGetInlineAnchor, PlasmoGetStyle } from "plasmo"
+import React, { useEffect, useState } from "react"
 
-import { ProfileButton } from "~src/components/ProfileButton";
-import { SpreadsheetsButton } from "~src/components/SpreadsheetsButton";
-import { WebsiteButton } from "~src/components/WebsiteButton";
-import { SheetsModalWindow } from "~src/components/SheetsModalWindow";
-import { gmailService } from "~src/services/gmail";
-import { storageService } from "~src/services/storage";
-import { generateShortId } from "~src/utils/helpers";
+import { AccountCard } from "~src/components/AccountCard"
+import { SheetsDialog } from "~src/components/SheetsDialog"
+import { Toasts } from "~src/components/Toasts"
+import { emit, subscribe, toast } from "~src/lib/bus"
+import { showError } from "~src/lib/errors"
+import { locale, t } from "~src/lib/i18n"
+import { ExtensionError, send } from "~src/lib/messages"
+import { addListChip, findComposeWindows, findToolbarAnchor, openComposeWindow } from "~src/services/gmail"
+import { newListId, saveList } from "~src/services/lists"
+import { injectFonts } from "~src/ui/fonts"
+import { PlaneMark, SheetIcon } from "~src/ui/icons"
+import { usePopover } from "~src/ui/usePopover"
 
 export const config: PlasmoCSConfig = {
-    matches: ["https://mail.google.com/*"],
+  matches: ["https://mail.google.com/*"]
 }
 
-export const getInlineAnchor: PlasmoGetInlineAnchor = async () => {
-    return new Promise<Element>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error("Anchor element not found"))
-        }, 10000)
-
-        const checkElement = () => {
-            const anchor = document.querySelector(".zo") ||
-              document.querySelector('[role="toolbar"]') ||
-              document.querySelector('.btC')
-
-            if (anchor) {
-              clearTimeout(timeout)
-              resolve(anchor as Element)
-            } else {
-                setTimeout(checkElement, 100)
-            }
-        }
-
-        checkElement()
-    })
+export const getStyle: PlasmoGetStyle = () => {
+  const style = document.createElement("style")
+  style.textContent = styleText
+  return style
 }
 
-export default function GmailButtons() {
-    const [showSheets, setShowSheets] = useState(false)
+// the toolbar is mounted once per Gmail tab: declare the fonts for all Airletter UIs here
+injectFonts()
 
-    useEffect(() => {
-        const handler = (event: MessageEvent) => {
-            if (event.source !== window) return
-            if (event.data?.source !== "quicksend") return
-
-            if (event.data.type === "OPEN_SHEETS_MODAL") {
-                console.log("Opening sheets modal") 
-                setShowSheets(true)
-            }
-        }
-
-        window.addEventListener("message", handler)
-        return () => window.removeEventListener("message", handler)
-    }, [])
-
-    const handleSheetsSubmit = async (spreadsheetId: string, range: string) => {
-        try {
-            let composeWindows = await gmailService.findComposeWindows()
-            
-            if (composeWindows.length === 0) {
-                console.log("No compose window found, opening new one")
-                await gmailService.openComposeWindow()
-                await new Promise(resolve => setTimeout(resolve, 500))
-                composeWindows = await gmailService.findComposeWindows()
-            }
-
-            const composeWindow = composeWindows[0]
-            if (!composeWindow) {
-                console.error("Could not find or create compose window")
-                return
-            }
-
-            const response = await chrome.runtime.sendMessage({
-                type: 'GET_EMAILS',
-                spreadsheetId: spreadsheetId,
-                range: range,
-            })
-
-            if (!response.success) {
-                toast.error("Try again please")
-                return
-            }
-
-            const generatedId = await generateShortId();
-
-            await gmailService.addEmailChip(
-                generatedId,
-                response.data.emails.length,
-                composeWindow
-            )
-
-            await storageService.setParsedEmails({
-                id: generatedId,
-                spreadsheetId: spreadsheetId,
-                emails: response.data.emails,
-            })
-
-            setShowSheets(false)
-        } catch (error) {
-            console.error("Error in handleSheetsSubmit:", error)
-            toast.error("Try again please")
-        }
+/** Toolbar next to Gmail's search */
+export const getInlineAnchor: PlasmoGetInlineAnchor = () =>
+  new Promise<Element>((resolve, reject) => {
+    const started = Date.now()
+    const check = () => {
+      const anchor = findToolbarAnchor()
+      if (anchor) resolve(anchor)
+      else if (Date.now() - started > 15000) reject(new Error("Gmail toolbar not found"))
+      else setTimeout(check, 200)
     }
+    check()
+  })
 
-    return (
-        <>
-            <div style={{
-                display: 'flex',
-                flexDirection: 'row',
-                gap: '8px',
-                alignItems: 'center'
-            }}>
-                <ProfileButton />
-                <SpreadsheetsButton />
-                <WebsiteButton />
-            </div>
+export default function Toolbar() {
+  const [showSheets, setShowSheets] = useState(false)
+  const account = usePopover<HTMLDivElement>()
 
-            {showSheets && (
-                <SheetsModalWindow
-                    onSubmit={handleSheetsSubmit}
-                    onClose={() => setShowSheets(false)}
-                />
-            )}
-        </>
-    )
+  useEffect(() => subscribe((e) => e.type === "OPEN_SHEETS_MODAL" && setShowSheets(true)), [])
+
+  const openSheets = async () => {
+    // the backend refuses the import on the trial anyway; say so before the
+    // user fills in the form. Unknown plan (signed out, offline): show the form.
+    const plan = await send({ type: "ACCOUNT" }).then((a) => a.plan, () => undefined)
+    if (plan === null) return showError(new ExtensionError("no_subscription", "no plan"))
+    if (plan === "trial") return showError(new ExtensionError("paid_plan_required", "trial"))
+    emit({ type: "OPEN_SHEETS_MODAL" })
+  }
+
+  const importSheet = async (spreadsheet: string, range: string) => {
+    try {
+      const { emails } = await send({ type: "PARSE_SHEET", spreadsheet, range })
+
+      const compose = findComposeWindows()[0] ?? (await openComposeWindow())
+      if (!compose) return toast({ kind: "error", text: t.compose.noCompose })
+
+      const id = newListId()
+      await saveList(id, { spreadsheet, emails })
+      addListChip(compose, id, emails.length)
+      toast({ kind: "success", text: t.sheets.added(emails.length) })
+      setShowSheets(false)
+    } catch (e) {
+      showError(e)
+    }
+  }
+
+  return (
+    <div className="al-root" lang={locale} style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: 8 }}>
+      <button
+        className="al-round-btn"
+        title={t.sheets.button}
+        aria-label={t.sheets.button}
+        onClick={openSheets}>
+        <SheetIcon />
+      </button>
+
+      <div ref={account.ref} style={{ position: "relative" }}>
+        <button
+          className="al-mark-btn"
+          title={t.account.button}
+          aria-label={t.account.button}
+          aria-expanded={account.open}
+          onClick={account.toggle}>
+          <PlaneMark />
+        </button>
+        {account.open && (
+          <div className="al-root al-panel al-popover down">
+            <AccountCard />
+          </div>
+        )}
+      </div>
+
+      {showSheets && <SheetsDialog onSubmit={importSheet} onClose={() => setShowSheets(false)} />}
+      <Toasts />
+    </div>
+  )
 }

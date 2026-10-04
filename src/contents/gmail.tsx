@@ -1,183 +1,114 @@
-import type { PlasmoCSConfig, PlasmoGetInlineAnchorList } from "plasmo"
-import React, { useEffect, useRef, useState } from "react"
-import { MoreVertical } from "lucide-react"
+import { styles as styleText } from "~src/ui/styles"
+import type { PlasmoCSConfig, PlasmoGetInlineAnchorList, PlasmoGetStyle } from "plasmo"
+import React, { useRef, useState } from "react"
 
-import { QuickSendButton } from "~src/components/QuickSendButton"
-import { GMAIL_SELECTORS } from "~src/utils/constants"
-import { gmailService } from "~src/services/gmail"
-import { findParentComposeWindow } from "~src/utils/helpers"
-import { CampaignDropdown } from "~src/components/CampaignDropdown"
-import { subscribe } from "~src/contents/message-bus"
-import { toast } from "sonner";
-import type { AttachmentDataToParse, EmailData, AttachmentDataParsed, CampaignData } from "~src/types";
+import { AirletterButton } from "~src/components/AirletterButton"
+import { FormatPopover } from "~src/components/FormatPopover"
+import { SchedulePopover } from "~src/components/SchedulePopover"
+import { toast } from "~src/lib/bus"
+import { siteLink } from "~src/lib/config"
+import { showError } from "~src/lib/errors"
+import { formatDateTime, locale, t } from "~src/lib/i18n"
+import { send, type AttachmentPayload } from "~src/lib/messages"
+import { buildBody, InlineTooLarge, type BodyMode } from "~src/services/body"
+import { findComposeWindow, findSendRows, readAttachmentLinks, readDraft } from "~src/services/gmail"
+import type { Schedule } from "~src/types"
 
 export const config: PlasmoCSConfig = {
-    matches: ["https://mail.google.com/*"],
-    all_frames: true,
+  matches: ["https://mail.google.com/*"]
 }
 
-async function saveCampaignTime(v: boolean): Promise<void> {
-    if (!v) {
-
-    }
+export const getStyle: PlasmoGetStyle = () => {
+  const style = document.createElement("style")
+  style.textContent = styleText
+  return style
 }
 
-export const getInlineAnchorList: PlasmoGetInlineAnchorList = async () => { 
-    const anchors: Element[] = []
+// Gmail's own limit is 25 MB after base64 encoding
+const MAX_ATTACHMENTS_BYTES = 18 * 1024 * 1024
 
-    const composeWindows = document.querySelectorAll(GMAIL_SELECTORS.COMPOSE_WINDOW)
+/** One Airletter button next to "Send" in every compose window */
+export const getInlineAnchorList: PlasmoGetInlineAnchorList = async () =>
+  findSendRows().map((element) => ({ element, insertPosition: "afterend" as const }))
 
-    composeWindows.forEach((window) => {
-        const sendButton = window.querySelector(GMAIL_SELECTORS.SEND_BUTTON)
+export default function ComposeActions() {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [busy, setBusy] = useState(false)
+  // the schedule belongs to this compose window only
+  const [schedule, setSchedule] = useState<Schedule>({
+    date: "",
+    time: "",
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+  })
+  const [mode, setMode] = useState<BodyMode>("rich")
 
-        if (sendButton) {
-            const anchor = sendButton.closest('.gU.Up')
-            if (anchor) {
-                anchor.setAttribute('data-quicksend-compose-id', window.getAttribute('data-compose-id') || '')
-                anchors.push(anchor)
-            }
-        }
-    })
-    
-    return anchors.map(element => ({
-        element,
-        insertPosition: "afterend" as const
-    }))
-}
+  const start = async () => {
+    const el = containerRef.current && findComposeWindow(containerRef.current)
+    if (!el) return toast({ kind: "error", text: t.compose.notFound })
 
-export default function QuickSendInline() {
-    const [showCampaign, setShowCampaign] = useState(false)
-    const containerRef = useRef<HTMLDivElement>(null)
-    const [showSheets, setShowSheets] = useState(false)
-    const [isDotsHovered, setIsDotsHovered] = useState(false)
+    setBusy(true)
+    try {
+      const { signedIn } = await send({ type: "AUTH_STATUS" })
+      if (!signedIn) await send({ type: "LOGIN" })
 
-    useEffect(() => {
-    subscribe((type) => {
-        if (type === "OPEN_SHEETS_MODAL") {
-        setShowSheets(true)
-        }
-    })
-    }, [])
-
-    useEffect(() => {
-      const handler = (event: MessageEvent) => {
-        if (event.source !== window) return
-        if (event.data?.source !== "quicksend") return
-
-        if (event.data.type === "OPEN_SHEETS_MODAL") {
-          setShowSheets(true)
-        }
+      const draft = await readDraft(el)
+      if (draft.recipients.length === 0) return toast({ kind: "error", text: t.compose.noRecipients })
+      if (!draft.subject.trim()) return toast({ kind: "error", text: t.compose.noSubject })
+      if (Boolean(schedule.date) !== Boolean(schedule.time)) {
+        return toast({ kind: "error", text: t.compose.halfSchedule })
       }
 
-      window.addEventListener("message", handler)
-      return () => window.removeEventListener("message", handler)
-    }, [])
+      const attachments: AttachmentPayload[] = []
+      let total = 0
+      for (const link of readAttachmentLinks(el)) {
+        const file = await send({ type: "FETCH_ATTACHMENT", url: link.url })
+        total += file.size
+        if (total > MAX_ATTACHMENTS_BYTES) return toast({ kind: "error", text: t.compose.tooLarge })
+        attachments.push({ filename: link.filename, mimetype: file.mimetype, content: file.content })
+      }
 
-    const handleClick = async () => {
-        if (!containerRef.current) return
+      let body
+      try {
+        body = await buildBody(mode, draft, MAX_ATTACHMENTS_BYTES - total)
+      } catch (e) {
+        if (e instanceof InlineTooLarge) return toast({ kind: "error", text: t.compose.tooLarge })
+        throw e
+      }
+      if (!body.body.trim()) return toast({ kind: "error", text: t.compose.emptyBody })
 
-        let composeWindow = await findParentComposeWindow(containerRef.current)
-
-        if (!composeWindow) {
-            const allComposeWindows = document.querySelectorAll('.AD, .M9')
-
-            for (const window of allComposeWindows) {
-                if (window.contains(containerRef.current)) {
-                    composeWindow = window as HTMLElement
-                    break
-                }
-            }
+      const res = await send({
+        type: "START_CAMPAIGN",
+        campaign: {
+          recipients: draft.recipients,
+          subject: draft.subject,
+          body: body.body,
+          format: body.format,
+          locale,
+          attachments: [...attachments, ...body.inline],
+          ...schedule
         }
+      })
 
-        if (!composeWindow) {
-            const composeId = containerRef.current.closest('.gU.Up')?.getAttribute('data-quicksend-compose-id')
-
-            if (composeId) {
-                composeWindow = document.querySelector(`[data-compose-id="${composeId}"]`)
-            }
-        }
-
-        if (!composeWindow) {
-            console.error("[Quicksend] Compose window not found!")
-            console.log("[Quicksend] Container:", containerRef.current)
-            console.log("[Quicksend] All compose windows:", document.querySelectorAll('.AD, .M9'))
-            toast.error("Cannot find compose window. Please try again.")
-
-            return
-        }
-
-        const emailData: EmailData = await gmailService.getEmailDataFromGmailMessagesWindow(composeWindow)
-        const attachments: AttachmentDataToParse[] = await gmailService.getFilesFromGmailMessageWindow(composeWindow)
-
-        const files: AttachmentDataParsed[] = await Promise.all(
-            attachments.map(async (attachment) => {
-                const response = await chrome.runtime.sendMessage({
-                    type: 'FETCH_ATTACHMENT',
-                    attachmentUrl: attachment.url,
-                });
-
-                if (!response.success) {
-                    throw new Error(`Failed to fetch attachment: ${response.error}`);
-                }
-
-                return {
-                    filename: attachment.filename,
-                    content: response.data,
-                    mimetype: response.mimeType || 'application/octet-stream',
-                    size: response.size || 0
-                };
-            })
-        )
-
-        const campaignData: CampaignData = {
-            ...emailData,
-            files
-        }
-
-        const response = await chrome.runtime.sendMessage({
-            type: 'START_CAMPAIGN',
-            campaignData: campaignData,
-        })
-
-        if (!response.success) {
-            toast.error("Try again please.")
-        }
+      const text = schedule.date
+        ? t.compose.scheduled(res.total, formatDateTime(res.scheduledAt))
+        : t.compose.started(res.total)
+      toast({
+        kind: "success",
+        text: text + (res.skipped.length ? t.compose.skipped(res.skipped.length) : ""),
+        action: { label: t.compose.progress, href: siteLink("/dashboard") }
+      })
+    } catch (e) {
+      showError(e)
+    } finally {
+      setBusy(false)
     }
+  }
 
-    return (
-      <div
-        ref={containerRef}
-        style={{
-            position: 'relative',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-        }}
-      >
-        <QuickSendButton onClick={handleClick} />
-
-        <button
-          style={{
-            padding: '8px',
-            backgroundColor: isDotsHovered ? '#F3F4F6' : 'transparent',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease-in-out',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            position: 'relative'
-          }}
-          onClick={() => setShowCampaign(v => !v)}
-          onMouseEnter={() => setIsDotsHovered(true)}
-          onMouseLeave={() => setIsDotsHovered(false)}
-          title="Schedule campaign"
-        >
-          <MoreVertical size={20} color="#4B5563" strokeWidth={2} />
-        </button>
-
-        <CampaignDropdown isVisible={showCampaign} />
-      </div>
-    )
+  return (
+    <div ref={containerRef} className="al-root" lang={locale} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+      <AirletterButton busy={busy} onClick={start} />
+      <FormatPopover value={mode} onChange={setMode} />
+      <SchedulePopover value={schedule} onChange={setSchedule} />
+    </div>
+  )
 }
