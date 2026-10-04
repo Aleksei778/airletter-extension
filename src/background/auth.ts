@@ -61,7 +61,8 @@ export async function login(): Promise<void> {
 
   const error = params.get("error")
   if (error) {
-    const code: ErrorCode = error === "missing_scopes" || error === "access_denied" ? error : "unknown"
+    const known: ErrorCode[] = ["missing_scopes", "access_denied", "google_account_mismatch", "google_account_taken"]
+    const code: ErrorCode = known.includes(error as ErrorCode) ? (error as ErrorCode) : "unknown"
     throw new ExtensionError(code, error)
   }
 
