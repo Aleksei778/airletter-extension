@@ -26,6 +26,7 @@ const ru = {
   },
   sheets: {
     button: "Импорт из Google Таблиц",
+    short: "Sheets",
     title: "Получатели из Google Таблиц",
     text: "Airletter возьмёт адреса из первой колонки диапазона. Дубли и некорректные адреса отсеются.",
     link: "Ссылка на таблицу или ID",
@@ -37,6 +38,7 @@ const ru = {
   },
   account: {
     button: "Аккаунт Airletter",
+    short: "Account",
     signInTitle: "Войдите, чтобы отправлять",
     signInText: "Войдите по email и подключите Gmail. Airletter попросит только право отправлять письма от вашего имени.",
     signIn: "Войти",
@@ -111,6 +113,7 @@ const en: Dict = {
   },
   sheets: {
     button: "Import from Google Sheets",
+    short: "Sheets",
     title: "Recipients from Google Sheets",
     text: "Airletter takes addresses from the first column of the range. Duplicates and invalid addresses are dropped.",
     link: "Spreadsheet link or ID",
@@ -122,6 +125,7 @@ const en: Dict = {
   },
   account: {
     button: "Airletter account",
+    short: "Account",
     signInTitle: "Sign in to send",
     signInText: "Sign in with your email and connect Gmail. Airletter only asks for permission to send email on your behalf.",
     signIn: "Sign in",
