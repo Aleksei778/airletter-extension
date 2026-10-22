@@ -35,26 +35,25 @@ export function findComposeWindow(el: Element): HTMLElement | null {
   return null
 }
 
-// Gmail's own toolbars, from the most to the least preferred. The last two
-// also exist inside compose windows, so those matches are skipped.
-const TOOLBAR_ANCHORS = [".zo", '[role="toolbar"]', ".btC"]
 let toolbarAnchor: Element | null = null
 
 /**
- * Where the Airletter toolbar goes. Plasmo asks again on every DOM change;
- * a different answer mounts a second toolbar, so keep the first one while
- * it is still in the page.
+ * Where the Airletter toolbar goes: a row right under Gmail's "Compose"
+ * button. The sidebar is rendered once and survives navigation, unlike the
+ * toolbars around the message list, which also exist in an opened thread.
+ * Plasmo asks again on every DOM change; a different answer mounts a second
+ * toolbar, so keep the first one while it is still in the page.
  */
 export function findToolbarAnchor(): Element | null {
   if (toolbarAnchor?.isConnected) return toolbarAnchor
-  toolbarAnchor = null
-  for (const selector of TOOLBAR_ANCHORS) {
-    const el = Array.from(document.querySelectorAll(selector)).find(
-      (el) => !el.closest(`${SEL.composeWindow}, [role="dialog"]`)
-    )
-    if (el) return (toolbarAnchor = el)
-  }
-  return null
+  // the button's wrapper, so the toolbar becomes a row of its own below it
+  toolbarAnchor = findComposeButton()?.parentElement ?? null
+  return toolbarAnchor
+}
+
+/** Gmail's "Compose" button in the sidebar */
+export function findComposeButton(): HTMLElement | null {
+  return document.querySelector<HTMLElement>(SEL.composeButton)
 }
 
 /** The row with the send button, once per compose window */
@@ -72,7 +71,7 @@ export function findComposeWindows(): HTMLElement[] {
 }
 
 export async function openComposeWindow(): Promise<HTMLElement | null> {
-  document.querySelector<HTMLElement>(SEL.composeButton)?.click()
+  findComposeButton()?.click()
   for (let i = 0; i < 20; i++) {
     await new Promise((r) => setTimeout(r, 100))
     const w = findComposeWindows()[0]

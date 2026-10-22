@@ -96,6 +96,99 @@ button {
   height: 15px;
 }
 
+/* the Airletter block under Gmail's "Compose" button, as wide as it */
+.al-toolbar {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: -6px 0 8px 16px;
+  padding: 5px;
+  border-radius: 22px;
+  background: rgb(0 0 0 / 0.07);
+}
+.al-toolbar.compact {
+  display: inline-flex;
+}
+/* light and dark pills; hover lifts them and slides the arrow, colors stay */
+.al-tool-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 38px;
+  padding: 0 12px 0 4px;
+  border: none;
+  border-radius: 100px;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.08), 0 1px 2px rgb(0 0 0 / 0.08);
+  font-family: var(--head);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease);
+}
+.al-tool-btn.dark {
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+}
+.al-tool-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.08), 0 6px 14px -4px rgb(0 0 0 / 0.25);
+}
+.al-tool-btn.dark:hover {
+  box-shadow: 0 6px 14px -4px rgb(0 0 0 / 0.45);
+}
+.al-tool-btn:active {
+  transform: translateY(0);
+}
+
+/* the icon sits in its own circle, inverted against the pill */
+.al-tool-icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--paper);
+}
+.al-tool-btn.dark .al-tool-icon {
+  background: var(--paper);
+  color: var(--ink);
+}
+.al-tool-icon svg {
+  width: 15px;
+  height: 15px;
+}
+.al-tool-label {
+  flex: 1;
+  text-align: left;
+}
+.al-tool-arrow {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  opacity: 0.45;
+  transition: transform 0.25s var(--ease), opacity 0.2s;
+}
+.al-tool-btn:hover .al-tool-arrow {
+  transform: translateX(3px);
+  opacity: 1;
+}
+
+.al-toolbar.compact .al-tool-btn {
+  justify-content: center;
+  width: 38px;
+  padding: 0;
+}
+
 /* round companion of the Airletter pill: outlined, filled when active */
 .al-round-btn {
   display: inline-flex;

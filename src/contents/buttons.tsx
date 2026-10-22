@@ -2,18 +2,23 @@ import { styles as styleText } from "~src/ui/styles"
 import type { PlasmoCSConfig, PlasmoGetInlineAnchor, PlasmoGetStyle } from "plasmo"
 import React, { useEffect, useState } from "react"
 
-import { AccountCard } from "~src/components/AccountCard"
+import { AccountDialog } from "~src/components/AccountDialog"
 import { SheetsDialog } from "~src/components/SheetsDialog"
 import { Toasts } from "~src/components/Toasts"
 import { emit, subscribe, toast } from "~src/lib/bus"
 import { showError } from "~src/lib/errors"
 import { locale, t } from "~src/lib/i18n"
 import { ExtensionError, send } from "~src/lib/messages"
-import { addListChip, findComposeWindows, findToolbarAnchor, openComposeWindow } from "~src/services/gmail"
+import {
+  addListChip,
+  findComposeButton,
+  findComposeWindows,
+  findToolbarAnchor,
+  openComposeWindow
+} from "~src/services/gmail"
 import { newListId, saveList } from "~src/services/lists"
 import { injectFonts } from "~src/ui/fonts"
-import { PlaneMark, SheetIcon } from "~src/ui/icons"
-import { usePopover } from "~src/ui/usePopover"
+import { ArrowIcon, PlaneMark, SheetIcon } from "~src/ui/icons"
 
 export const config: PlasmoCSConfig = {
   matches: ["https://mail.google.com/*"]
@@ -28,14 +33,14 @@ export const getStyle: PlasmoGetStyle = () => {
 // the toolbar is mounted once per Gmail tab: declare the fonts for all Airletter UIs here
 injectFonts()
 
-/** Toolbar next to Gmail's search */
+/** Toolbar under Gmail's "Compose" button */
 export const getInlineAnchor: PlasmoGetInlineAnchor = () =>
-  new Promise<Element>((resolve, reject) => {
+  new Promise<{ element: Element; insertPosition: "afterend" }>((resolve, reject) => {
     const started = Date.now()
     const check = () => {
-      const anchor = findToolbarAnchor()
-      if (anchor) resolve(anchor)
-      else if (Date.now() - started > 15000) reject(new Error("Gmail toolbar not found"))
+      const element = findToolbarAnchor()
+      if (element) resolve({ element, insertPosition: "afterend" })
+      else if (Date.now() - started > 15000) reject(new Error("Gmail compose button not found"))
       else setTimeout(check, 200)
     }
     check()
@@ -43,7 +48,10 @@ export const getInlineAnchor: PlasmoGetInlineAnchor = () =>
 
 export default function Toolbar() {
   const [showSheets, setShowSheets] = useState(false)
-  const account = usePopover<HTMLDivElement>()
+  const [showAccount, setShowAccount] = useState(false)
+  const width = useComposeWidth()
+  // the sidebar collapsed to icons: so do we
+  const compact = width > 0 && width < 120
 
   useEffect(() => subscribe((e) => e.type === "OPEN_SHEETS_MODAL" && setShowSheets(true)), [])
 
@@ -74,33 +82,47 @@ export default function Toolbar() {
   }
 
   return (
-    <div className="al-root" lang={locale} style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: 8 }}>
-      <button
-        className="al-round-btn"
-        title={t.sheets.button}
-        aria-label={t.sheets.button}
-        onClick={openSheets}>
-        <SheetIcon />
+    <div
+      className={`al-root al-toolbar${compact ? " compact" : ""}`}
+      lang={locale}
+      style={width && !compact ? { width } : undefined}>
+      <button className="al-tool-btn" title={t.sheets.button} aria-label={t.sheets.button} onClick={openSheets}>
+        <span className="al-tool-icon">
+          <SheetIcon />
+        </span>
+        {!compact && <span className="al-tool-label">{t.sheets.short}</span>}
+        {!compact && <ArrowIcon className="al-tool-arrow" />}
       </button>
 
-      <div ref={account.ref} style={{ position: "relative" }}>
-        <button
-          className="al-mark-btn"
-          title={t.account.button}
-          aria-label={t.account.button}
-          aria-expanded={account.open}
-          onClick={account.toggle}>
+      <button
+        className="al-tool-btn dark"
+        title={t.account.button}
+        aria-label={t.account.button}
+        aria-haspopup="dialog"
+        onClick={() => setShowAccount(true)}>
+        <span className="al-tool-icon">
           <PlaneMark />
-        </button>
-        {account.open && (
-          <div className="al-root al-panel al-popover down">
-            <AccountCard />
-          </div>
-        )}
-      </div>
+        </span>
+        {!compact && <span className="al-tool-label">{t.account.short}</span>}
+        {!compact && <ArrowIcon className="al-tool-arrow" />}
+      </button>
 
+      {showAccount && <AccountDialog onClose={() => setShowAccount(false)} />}
       {showSheets && <SheetsDialog onSubmit={importSheet} onClose={() => setShowSheets(false)} />}
       <Toasts />
     </div>
   )
+}
+
+/** Width of Gmail's "Compose" button, followed as the sidebar expands and collapses */
+function useComposeWidth() {
+  const [width, setWidth] = useState(0)
+  useEffect(() => {
+    const button = findComposeButton()
+    if (!button) return
+    const observer = new ResizeObserver(() => setWidth(button.offsetWidth))
+    observer.observe(button)
+    return () => observer.disconnect()
+  }, [])
+  return width
 }
