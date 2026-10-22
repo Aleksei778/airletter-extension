@@ -1,7 +1,7 @@
 {
   "name": "airletter-extension",
   "version": "0.0.1",
-  "description": "Bulk email campaigns from your own Gmail",
+  "description": "Personal emails to each recipient from your own Gmail",
   "author": "aleksey_pr",
   "scripts": {
     "dev": "plasmo dev",
