@@ -1,4 +1,4 @@
 {
   "extensionName": { "message": "Airletter" },
-  "extensionDescription": { "message": "Массовые рассылки из вашего Gmail: получатели из Google Таблиц, расписание, человеческий темп отправки." }
+  "extensionDescription": { "message": "Персональные письма каждому получателю из вашего Gmail: получатели из Google Таблиц, расписание, отписка в каждом письме." }
 }

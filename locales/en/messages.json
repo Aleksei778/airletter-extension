@@ -1,4 +1,4 @@
 {
   "extensionName": { "message": "Airletter" },
-  "extensionDescription": { "message": "Bulk email campaigns from your own Gmail: recipients from Google Sheets, scheduling, human pacing." }
+  "extensionDescription": { "message": "Personal emails to each recipient from your own Gmail: recipients from Google Sheets, scheduling, unsubscribe link in every email." }
 }
