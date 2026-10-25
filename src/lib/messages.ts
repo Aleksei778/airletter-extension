@@ -63,7 +63,8 @@ export type ErrorCode =
   | "validation"
   | "missing_scopes"
   | "access_denied"
-  | "google_account_mismatch" // another Google account is bound to the user
+  | "not_gmail" // the account's email is not a Gmail mailbox
+  | "google_account_mismatch" // the Google account is not the user's sign-up email
   | "google_account_taken" // the Google account is bound to another user
   | "signin_failed" // the sign-in page could not be loaded
   | "network"
