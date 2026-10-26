@@ -9,7 +9,7 @@ export type Toast = {
   action?: { label: string; href?: string; login?: boolean }
 }
 
-export type BusEvent = { type: "OPEN_SHEETS_MODAL" } | { type: "TOAST"; toast: Toast }
+export type BusEvent = { type: "TOAST"; toast: Toast }
 
 const SOURCE = "airletter"
 

@@ -30,17 +30,10 @@ async function takeTab(windowId: number): Promise<number | undefined> {
   return tabId
 }
 
-/** Spreadsheet ID from a Google Sheets link or a bare ID */
-export function spreadsheetId(idOrUrl: string): string {
-  const s = idOrUrl.trim()
-  return s.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/)?.[1] ?? (/^[a-zA-Z0-9-_]{20,}$/.test(s) ? s : "")
-}
-
-export async function openPicker(spreadsheet: string, tabId: number) {
+export async function openPicker(tabId: number) {
   const { code } = await pickerCode()
-  const id = spreadsheetId(spreadsheet)
   // the code goes in the fragment: it never reaches server logs or referrers
-  const url = `${SITE_URL}/${locale}/sheets/pick${id ? `?id=${encodeURIComponent(id)}` : ""}#code=${encodeURIComponent(code)}`
+  const url = `${SITE_URL}/${locale}/sheets/pick#code=${encodeURIComponent(code)}`
 
   const win = await chrome.windows.create({ url, type: "popup", width: 1100, height: 760, focused: true })
   if (win?.id === undefined) throw new Error("Picker window was not opened")

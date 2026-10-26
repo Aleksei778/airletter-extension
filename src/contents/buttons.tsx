@@ -5,7 +5,7 @@ import React, { useEffect, useState } from "react"
 import { AccountDialog } from "~src/components/AccountDialog"
 import { SheetsDialog } from "~src/components/SheetsDialog"
 import { Toasts } from "~src/components/Toasts"
-import { emit, subscribe, toast } from "~src/lib/bus"
+import { toast } from "~src/lib/bus"
 import { showError } from "~src/lib/errors"
 import { locale, t } from "~src/lib/i18n"
 import { ExtensionError, send, type PickerEvent } from "~src/lib/messages"
@@ -47,56 +47,53 @@ export const getInlineAnchor: PlasmoGetInlineAnchor = () =>
   })
 
 export default function Toolbar() {
-  const [showSheets, setShowSheets] = useState(false)
   const [picking, setPicking] = useState(false)
+  // spreadsheet chosen in Google Picker, waiting for its sheet and range
+  const [picked, setPicked] = useState<{ id: string; name: string } | null>(null)
   const [showAccount, setShowAccount] = useState(false)
   const width = useComposeWidth()
   // the sidebar collapsed to icons: so do we
   const compact = width > 0 && width < 120
 
-  useEffect(() => subscribe((e) => e.type === "OPEN_SHEETS_MODAL" && setShowSheets(true)), [])
-
-  const openSheets = async () => {
-    // the backend refuses the import on the trial anyway; say so before the
-    // user fills in the form. Unknown plan (signed out, offline): show the form.
+  // Airletter reads only spreadsheets chosen in Google Picker (drive.file), so
+  // the button opens the Picker first; sheet and range are asked afterwards
+  const pickSheet = async () => {
+    if (picking) return
+    // the backend refuses the import on the trial anyway; say so before
+    // opening Google Drive. Unknown plan (signed out, offline): try anyway.
     const plan = await send({ type: "ACCOUNT" }).then((a) => a.plan, () => undefined)
     if (plan === null) return showError(new ExtensionError("no_subscription", "no plan"))
     if (plan === "trial") return showError(new ExtensionError("paid_plan_required", "trial"))
-    emit({ type: "OPEN_SHEETS_MODAL" })
-  }
-
-  const addRecipients = async (spreadsheet: string, range: string) => {
-    const { emails } = await send({ type: "PARSE_SHEET", spreadsheet, range })
-
-    const compose = findComposeWindows()[0] ?? (await openComposeWindow())
-    if (!compose) return toast({ kind: "error", text: t.compose.noCompose })
-
-    const id = newListId()
-    await saveList(id, { spreadsheet, emails })
-    addListChip(compose, id, emails.length)
-    toast({ kind: "success", text: t.sheets.added(emails.length) })
-    setShowSheets(false)
-  }
-
-  // Airletter reads only spreadsheets chosen in Google Picker (drive.file):
-  // a file that was not chosen yet, or no link at all, opens the Picker first
-  const importSheet = async (spreadsheet: string, range: string) => {
-    try {
-      if (spreadsheet) return await addRecipients(spreadsheet, range)
-    } catch (e) {
-      if (!(e instanceof ExtensionError && e.code === "file_access_required")) return showError(e)
-    }
 
     setPicking(true)
     try {
-      await send({ type: "PICK_SHEET", spreadsheet })
+      await send({ type: "PICK_SHEET" })
+      toast({ kind: "info", text: t.sheets.picking })
       const event = await waitForPick()
       if (event.type === "SHEET_PICK_CANCELLED") return toast({ kind: "info", text: t.sheets.pickCancelled })
-      await addRecipients(event.id, range)
+      setPicked({ id: event.id, name: event.name })
     } catch (e) {
       showError(e)
     } finally {
       setPicking(false)
+    }
+  }
+
+  const importSheet = async (range: string) => {
+    if (!picked) return
+    try {
+      const { emails } = await send({ type: "PARSE_SHEET", spreadsheet: picked.id, range })
+
+      const compose = findComposeWindows()[0] ?? (await openComposeWindow())
+      if (!compose) return toast({ kind: "error", text: t.compose.noCompose })
+
+      const id = newListId()
+      await saveList(id, { spreadsheet: picked.id, emails })
+      addListChip(compose, id, emails.length)
+      toast({ kind: "success", text: t.sheets.added(emails.length) })
+      setPicked(null)
+    } catch (e) {
+      showError(e)
     }
   }
 
@@ -105,7 +102,12 @@ export default function Toolbar() {
       className={`al-root al-toolbar${compact ? " compact" : ""}`}
       lang={locale}
       style={width && !compact ? { width } : undefined}>
-      <button className="al-tool-btn" title={t.sheets.button} aria-label={t.sheets.button} onClick={openSheets}>
+      <button
+        className="al-tool-btn"
+        title={t.sheets.button}
+        aria-label={t.sheets.button}
+        onClick={pickSheet}
+        disabled={picking}>
         <span className="al-tool-icon">
           <SheetIcon />
         </span>
@@ -127,7 +129,7 @@ export default function Toolbar() {
       </button>
 
       {showAccount && <AccountDialog onClose={() => setShowAccount(false)} />}
-      {showSheets && <SheetsDialog onSubmit={importSheet} onClose={() => setShowSheets(false)} picking={picking} />}
+      {picked && <SheetsDialog fileName={picked.name} onSubmit={importSheet} onClose={() => setPicked(null)} />}
       <Toasts />
     </div>
   )
