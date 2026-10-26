@@ -39,8 +39,11 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return res.json()
 }
 
+// backend codes the extension shows as specific messages
+const knownCodes: ErrorCode[] = ["reauth_required", "no_subscription", "paid_plan_required", "file_access_required"]
+
 function errorCode(status: number, code?: string): ErrorCode {
-  if (code === "reauth_required" || code === "no_subscription" || code === "paid_plan_required") return code
+  if (knownCodes.includes(code as ErrorCode)) return code as ErrorCode
   if (status === 401) return "unauthorized"
   if (status === 402) return "no_subscription"
   if (status === 400 || status === 413 || status === 422) return "validation"
@@ -94,6 +97,11 @@ export function parseSheet(spreadsheet: string, range: string) {
     // the backend accepts either an ID or a full spreadsheet URL
     body: JSON.stringify({ spreadsheet_id: spreadsheet, range })
   })
+}
+
+/** One-time code that lets the website's Picker page act for this user */
+export function pickerCode() {
+  return request<{ code: string }>("/sheets/picker", { method: "POST" })
 }
 
 /** Downloads an attachment of the open draft with the user's Gmail cookies */

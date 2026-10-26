@@ -8,7 +8,7 @@ import { Toasts } from "~src/components/Toasts"
 import { emit, subscribe, toast } from "~src/lib/bus"
 import { showError } from "~src/lib/errors"
 import { locale, t } from "~src/lib/i18n"
-import { ExtensionError, send } from "~src/lib/messages"
+import { ExtensionError, send, type PickerEvent } from "~src/lib/messages"
 import {
   addListChip,
   findComposeButton,
@@ -48,6 +48,7 @@ export const getInlineAnchor: PlasmoGetInlineAnchor = () =>
 
 export default function Toolbar() {
   const [showSheets, setShowSheets] = useState(false)
+  const [picking, setPicking] = useState(false)
   const [showAccount, setShowAccount] = useState(false)
   const width = useComposeWidth()
   // the sidebar collapsed to icons: so do we
@@ -64,20 +65,38 @@ export default function Toolbar() {
     emit({ type: "OPEN_SHEETS_MODAL" })
   }
 
+  const addRecipients = async (spreadsheet: string, range: string) => {
+    const { emails } = await send({ type: "PARSE_SHEET", spreadsheet, range })
+
+    const compose = findComposeWindows()[0] ?? (await openComposeWindow())
+    if (!compose) return toast({ kind: "error", text: t.compose.noCompose })
+
+    const id = newListId()
+    await saveList(id, { spreadsheet, emails })
+    addListChip(compose, id, emails.length)
+    toast({ kind: "success", text: t.sheets.added(emails.length) })
+    setShowSheets(false)
+  }
+
+  // Airletter reads only spreadsheets chosen in Google Picker (drive.file):
+  // a file that was not chosen yet, or no link at all, opens the Picker first
   const importSheet = async (spreadsheet: string, range: string) => {
     try {
-      const { emails } = await send({ type: "PARSE_SHEET", spreadsheet, range })
+      if (spreadsheet) return await addRecipients(spreadsheet, range)
+    } catch (e) {
+      if (!(e instanceof ExtensionError && e.code === "file_access_required")) return showError(e)
+    }
 
-      const compose = findComposeWindows()[0] ?? (await openComposeWindow())
-      if (!compose) return toast({ kind: "error", text: t.compose.noCompose })
-
-      const id = newListId()
-      await saveList(id, { spreadsheet, emails })
-      addListChip(compose, id, emails.length)
-      toast({ kind: "success", text: t.sheets.added(emails.length) })
-      setShowSheets(false)
+    setPicking(true)
+    try {
+      await send({ type: "PICK_SHEET", spreadsheet })
+      const event = await waitForPick()
+      if (event.type === "SHEET_PICK_CANCELLED") return toast({ kind: "info", text: t.sheets.pickCancelled })
+      await addRecipients(event.id, range)
     } catch (e) {
       showError(e)
+    } finally {
+      setPicking(false)
     }
   }
 
@@ -108,10 +127,23 @@ export default function Toolbar() {
       </button>
 
       {showAccount && <AccountDialog onClose={() => setShowAccount(false)} />}
-      {showSheets && <SheetsDialog onSubmit={importSheet} onClose={() => setShowSheets(false)} />}
+      {showSheets && <SheetsDialog onSubmit={importSheet} onClose={() => setShowSheets(false)} picking={picking} />}
       <Toasts />
     </div>
   )
+}
+
+/** Resolves with the background's answer once the Google Picker window is done */
+function waitForPick(): Promise<PickerEvent> {
+  return new Promise((resolve) => {
+    const listener = (msg: PickerEvent, sender: chrome.runtime.MessageSender) => {
+      if (sender.id !== chrome.runtime.id) return
+      if (msg?.type !== "SHEET_PICKED" && msg?.type !== "SHEET_PICK_CANCELLED") return
+      chrome.runtime.onMessage.removeListener(listener)
+      resolve(msg)
+    }
+    chrome.runtime.onMessage.addListener(listener)
+  })
 }
 
 /** Width of Gmail's "Compose" button, followed as the sidebar expands and collapses */
