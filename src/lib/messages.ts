@@ -42,6 +42,8 @@ export type Request =
   | { type: "ACCOUNT" }
   | { type: "START_CAMPAIGN"; campaign: CampaignPayload }
   | { type: "PARSE_SHEET"; spreadsheet: string; range: string }
+  // opens Google Picker on the website; the answer comes later as a PickerEvent
+  | { type: "PICK_SHEET"; spreadsheet: string }
   | { type: "FETCH_ATTACHMENT"; url: string }
 
 export type ResponseData = {
@@ -51,6 +53,7 @@ export type ResponseData = {
   ACCOUNT: Account
   START_CAMPAIGN: CampaignCreated
   PARSE_SHEET: { emails: string[] }
+  PICK_SHEET: { opened: true }
   FETCH_ATTACHMENT: { content: string; mimetype: string; size: number }
 }
 
@@ -60,6 +63,7 @@ export type ErrorCode =
   | "reauth_required" // Google access revoked
   | "no_subscription"
   | "paid_plan_required" // a feature the trial does not include
+  | "file_access_required" // the spreadsheet was not chosen in Google Picker yet
   | "validation"
   | "missing_scopes"
   | "access_denied"
@@ -68,6 +72,9 @@ export type ErrorCode =
   | "signin_failed" // the sign-in page could not be loaded
   | "network"
   | "unknown"
+
+/** Sent by the background to the Gmail tab that asked for Google Picker */
+export type PickerEvent = { type: "SHEET_PICKED"; id: string; name: string } | { type: "SHEET_PICK_CANCELLED" }
 
 export type RemoteError = { code: ErrorCode; message: string }
 

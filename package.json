@@ -37,6 +37,11 @@
       "identity",
       "storage"
     ],
+    "externally_connectable": {
+      "matches": [
+        "$PLASMO_PUBLIC_SITE_URL/*"
+      ]
+    },
     "web_accessible_resources": [
       {
         "resources": [

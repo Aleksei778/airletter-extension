@@ -6,9 +6,11 @@ import { CloseIcon } from "~src/ui/icons"
 type Props = {
   onSubmit: (spreadsheet: string, range: string) => Promise<void>
   onClose: () => void
+  // waiting for the user to choose the file in the Google Picker window
+  picking: boolean
 }
 
-export function SheetsDialog({ onSubmit, onClose }: Props) {
+export function SheetsDialog({ onSubmit, onClose, picking }: Props) {
   const [spreadsheet, setSpreadsheet] = useState("")
   const [sheet, setSheet] = useState("")
   const [range, setRange] = useState("A2:A")
@@ -42,7 +44,7 @@ export function SheetsDialog({ onSubmit, onClose }: Props) {
           {t.sheets.title}
         </h2>
         <p className="al-text" style={{ marginTop: 14 }}>
-          {t.sheets.text}
+          {t.sheets.text} {t.sheets.pickNote}
         </p>
 
         <label className="al-field" style={{ marginTop: 24 }}>
@@ -50,11 +52,14 @@ export function SheetsDialog({ onSubmit, onClose }: Props) {
           <input
             ref={first}
             className="al-input"
-            required
             value={spreadsheet}
             onChange={(e) => setSpreadsheet(e.target.value)}
             placeholder="https://docs.google.com/spreadsheets/d/…"
+            aria-describedby="al-sheets-link-hint"
           />
+          <span id="al-sheets-link-hint" className="al-small" style={{ display: "block", marginTop: 6 }}>
+            {t.sheets.linkHint}
+          </span>
         </label>
 
         <div className="al-row">
@@ -69,7 +74,7 @@ export function SheetsDialog({ onSubmit, onClose }: Props) {
         </div>
 
         <button className="al-btn" type="submit" disabled={busy} style={{ marginTop: 28 }}>
-          {busy ? t.sheets.loading : t.sheets.submit}
+          {picking ? t.sheets.picking : busy ? t.sheets.loading : t.sheets.submit}
         </button>
       </form>
     </div>

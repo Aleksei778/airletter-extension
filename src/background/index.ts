@@ -2,8 +2,14 @@ import { ExtensionError, type Request, type Response, type ResponseData } from "
 
 import { account, fetchAttachment, parseSheet, startCampaign } from "./api"
 import { isSignedIn, login, logout } from "./auth"
+import { openPicker } from "./picker"
 
-type Handlers = { [T in Request["type"]]: (req: Extract<Request, { type: T }>) => Promise<ResponseData[T]> }
+type Handlers = {
+  [T in Request["type"]]: (
+    req: Extract<Request, { type: T }>,
+    sender: chrome.runtime.MessageSender
+  ) => Promise<ResponseData[T]>
+}
 
 const handlers: Handlers = {
   AUTH_STATUS: async () => ({ signedIn: await isSignedIn() }),
@@ -18,6 +24,10 @@ const handlers: Handlers = {
   ACCOUNT: () => account(),
   START_CAMPAIGN: (req) => startCampaign(req.campaign),
   PARSE_SHEET: (req) => parseSheet(req.spreadsheet, req.range),
+  PICK_SHEET: async (req, sender) => {
+    if (sender.tab?.id === undefined) throw new ExtensionError("validation", "Picker is opened from a Gmail tab")
+    return openPicker(req.spreadsheet, sender.tab.id)
+  },
   FETCH_ATTACHMENT: (req) => fetchAttachment(req.url)
 }
 
@@ -25,10 +35,12 @@ chrome.runtime.onMessage.addListener((req: Request, sender, sendResponse) => {
   // accept messages only from this extension's own pages and content scripts
   if (sender.id !== chrome.runtime.id) return false
 
-  const handler = handlers[req?.type] as ((r: Request) => Promise<unknown>) | undefined
+  const handler = handlers[req?.type] as
+    | ((r: Request, s: chrome.runtime.MessageSender) => Promise<unknown>)
+    | undefined
   if (!handler) return false
 
-  handler(req)
+  handler(req, sender)
     .then((data) => sendResponse({ ok: true, data } as Response<typeof req.type>))
     .catch((e: unknown) => {
       const error =
