@@ -89,7 +89,7 @@ export default function Toolbar() {
 
       const id = newListId()
       await saveList(id, { spreadsheet: picked.id, emails })
-      addListChip(compose, id, emails.length)
+      addListChip(compose, id, emails.length, t.sheets.chip(picked.name, emails.length))
       toast({ kind: "success", text: t.sheets.added(emails.length) })
       setPicked(null)
     } catch (e) {

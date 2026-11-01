@@ -37,7 +37,9 @@ const ru = {
     loading: "Загружаем…",
     picking: "Выберите таблицу в окне Google Диска.",
     pickCancelled: "Таблица не выбрана.",
-    added: (n: number) => `Добавлено получателей из таблицы: ${n}.`
+    added: (n: number) => `Добавлено получателей из таблицы: ${n}.`,
+    // name of the placeholder chip in the "To" field
+    chip: (name: string, n: number) => `${name} · ${n} ${plural(n, "получатель", "получателя", "получателей")}`
   },
   account: {
     button: "Аккаунт Airletter",
@@ -129,7 +131,8 @@ const en: Dict = {
     loading: "Loading…",
     picking: "Choose the spreadsheet in the Google Drive window.",
     pickCancelled: "No spreadsheet chosen.",
-    added: (n: number) => `${n} recipients added from the sheet.`
+    added: (n: number) => `${n} recipients added from the sheet.`,
+    chip: (name: string, n: number) => `${name} · ${n} ${n === 1 ? "recipient" : "recipients"}`
   },
   account: {
     button: "Airletter account",

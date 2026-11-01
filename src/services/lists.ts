@@ -1,6 +1,7 @@
 // Recipient lists imported from Google Sheets. The compose window only gets a
-// placeholder chip "<n>-recipients-id_<id>@airletter.invalid"; the addresses
-// are kept here and substituted when the campaign starts.
+// placeholder chip "<n>-recipients-id_<id>@airletter.invalid", shown under a
+// display name; the addresses are kept here and substituted when the campaign
+// starts.
 
 export const LIST_CHIP_DOMAIN = "airletter.invalid"
 const PREFIX = "sheet_list:"
@@ -14,6 +15,13 @@ export function newListId(): string {
 
 export function listChipAddress(id: string, count: number): string {
   return `${count}-recipients-id_${id}@${LIST_CHIP_DOMAIN}`
+}
+
+/** The chip as Gmail parses a typed recipient: "Display name" <address> */
+export function listChipRecipient(id: string, count: number, name: string): string {
+  // quotes and brackets break the address syntax, Gmail splits on commas
+  const safe = name.replace(/["<>\\,;]/g, " ").replace(/\s+/g, " ").trim().slice(0, 60)
+  return `"${safe}" <${listChipAddress(id, count)}>`
 }
 
 /** Returns the list ID if the address is a list placeholder */
