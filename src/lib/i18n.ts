@@ -13,7 +13,11 @@ const ru = {
     yours: "ваш",
     now: "Без даты — отправка сразу после нажатия Airletter.",
     at: (when: string) => `Отправка начнётся ${when}.`,
-    clear: "Очистить"
+    clear: "Очистить",
+    pause: "Пауза между письмами",
+    seconds: "сек",
+    minutes: "мин",
+    pauseRange: "От 3 секунд до 60 минут."
   },
   format: {
     button: "Формат письма",
@@ -63,6 +67,7 @@ const ru = {
     noRecipients: "Добавьте получателей в поле «Кому» или импортируйте Google Таблицу.",
     noSubject: "Добавьте тему письма.",
     halfSchedule: "Укажите и дату, и время — или очистите их, чтобы отправить сразу.",
+    badPause: "Пауза между письмами — от 3 секунд до 60 минут.",
     tooLarge: "Вложения и картинки больше 18 МБ.",
     emptyBody: "Письмо пустое.",
     noCompose: "Откройте новое письмо и повторите.",
@@ -107,7 +112,11 @@ const en: Dict = {
     yours: "yours",
     now: "No date — sending starts as soon as you press Airletter.",
     at: (when: string) => `Sending starts ${when}.`,
-    clear: "Clear"
+    clear: "Clear",
+    pause: "Pause between emails",
+    seconds: "sec",
+    minutes: "min",
+    pauseRange: "From 3 seconds to 60 minutes."
   },
   format: {
     button: "Email format",
@@ -156,6 +165,7 @@ const en: Dict = {
     noRecipients: "Add recipients to the To field or import a Google Sheet.",
     noSubject: "Add a subject.",
     halfSchedule: "Set both date and time, or clear them to send now.",
+    badPause: "The pause between emails must be from 3 seconds to 60 minutes.",
     tooLarge: "Attachments and images are larger than 18 MB.",
     emptyBody: "The email is empty.",
     noCompose: "Open a new email and try again.",

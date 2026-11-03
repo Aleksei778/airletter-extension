@@ -1,6 +1,6 @@
 import { styles as styleText } from "~src/ui/styles"
 import type { PlasmoCSConfig, PlasmoGetInlineAnchorList, PlasmoGetStyle } from "plasmo"
-import React, { useRef, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 
 import { AirletterButton } from "~src/components/AirletterButton"
 import { FormatPopover } from "~src/components/FormatPopover"
@@ -10,6 +10,7 @@ import { siteLink } from "~src/lib/config"
 import { showError } from "~src/lib/errors"
 import { formatDateTime, locale, t } from "~src/lib/i18n"
 import { send, type AttachmentPayload } from "~src/lib/messages"
+import { loadPause, PAUSE, savePause, validPause } from "~src/lib/prefs"
 import { buildBody, InlineTooLarge, type BodyMode } from "~src/services/body"
 import { findComposeWindow, findSendRows, readAttachmentLinks, readDraft } from "~src/services/gmail"
 import type { Schedule } from "~src/types"
@@ -41,6 +42,20 @@ export default function ComposeActions() {
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
   })
   const [mode, setMode] = useState<BodyMode>("rich")
+  // seconds between emails; NaN while the field holds something that is not a number
+  const [pause, setPause] = useState<number>(PAUSE.default)
+  const pauseTouched = useRef(false)
+
+  useEffect(() => {
+    // the last pause the sender used, unless they already changed it here
+    loadPause().then((p) => !pauseTouched.current && setPause(p))
+  }, [])
+
+  const changePause = (seconds: number) => {
+    pauseTouched.current = true
+    setPause(seconds)
+    void savePause(seconds)
+  }
 
   const start = async () => {
     const el = containerRef.current && findComposeWindow(containerRef.current)
@@ -57,6 +72,7 @@ export default function ComposeActions() {
       if (Boolean(schedule.date) !== Boolean(schedule.time)) {
         return toast({ kind: "error", text: t.compose.halfSchedule })
       }
+      if (!validPause(pause)) return toast({ kind: "error", text: t.compose.badPause })
 
       const attachments: AttachmentPayload[] = []
       let total = 0
@@ -85,7 +101,8 @@ export default function ComposeActions() {
           format: body.format,
           locale,
           attachments: [...attachments, ...body.inline],
-          ...schedule
+          ...schedule,
+          send_interval_seconds: pause
         }
       })
 
@@ -108,7 +125,7 @@ export default function ComposeActions() {
     <div ref={containerRef} className="al-root" lang={locale} style={{ display: "flex", alignItems: "center", gap: 6 }}>
       <AirletterButton busy={busy} onClick={start} />
       <FormatPopover value={mode} onChange={setMode} />
-      <SchedulePopover value={schedule} onChange={setSchedule} />
+      <SchedulePopover value={schedule} onChange={setSchedule} pause={pause} onPauseChange={changePause} />
     </div>
   )
 }
