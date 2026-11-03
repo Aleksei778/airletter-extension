@@ -4,16 +4,17 @@ import { t } from "~src/lib/i18n"
 import { CloseIcon } from "~src/ui/icons"
 
 type Props = {
-  onSubmit: (spreadsheet: string, range: string) => Promise<void>
+  // name of the spreadsheet chosen in Google Picker
+  fileName: string
+  onSubmit: (range: string) => Promise<void>
   onClose: () => void
-  // waiting for the user to choose the file in the Google Picker window
-  picking: boolean
 }
 
-export function SheetsDialog({ onSubmit, onClose, picking }: Props) {
-  const [spreadsheet, setSpreadsheet] = useState("")
+/** Sheet and range of the spreadsheet the user has just chosen in Google Picker */
+export function SheetsDialog({ fileName, onSubmit, onClose }: Props) {
   const [sheet, setSheet] = useState("")
-  const [range, setRange] = useState("A2:A")
+  // a header row is not a valid address and is dropped by the backend
+  const [range, setRange] = useState("A:A")
   const [busy, setBusy] = useState(false)
   const first = useRef<HTMLInputElement>(null)
 
@@ -29,7 +30,7 @@ export function SheetsDialog({ onSubmit, onClose, picking }: Props) {
     setBusy(true)
     // without a sheet name Google reads the first sheet
     const fullRange = sheet.trim() ? `'${sheet.trim().replace(/'/g, "''")}'!${range}` : range
-    await onSubmit(spreadsheet.trim(), fullRange)
+    await onSubmit(fullRange)
     setBusy(false)
   }
 
@@ -44,28 +45,26 @@ export function SheetsDialog({ onSubmit, onClose, picking }: Props) {
           {t.sheets.title}
         </h2>
         <p className="al-text" style={{ marginTop: 14 }}>
-          {t.sheets.text} {t.sheets.pickNote}
+          {t.sheets.text}
         </p>
 
-        <label className="al-field" style={{ marginTop: 24 }}>
-          <span className="al-label">{t.sheets.link}</span>
-          <input
-            ref={first}
-            className="al-input"
-            value={spreadsheet}
-            onChange={(e) => setSpreadsheet(e.target.value)}
-            placeholder="https://docs.google.com/spreadsheets/d/…"
-            aria-describedby="al-sheets-link-hint"
-          />
-          <span id="al-sheets-link-hint" className="al-small" style={{ display: "block", marginTop: 6 }}>
-            {t.sheets.linkHint}
-          </span>
-        </label>
+        <div className="al-field" style={{ marginTop: 24 }}>
+          <span className="al-label">{t.sheets.file}</span>
+          <div className="al-text" style={{ overflowWrap: "anywhere" }}>
+            {fileName}
+          </div>
+        </div>
 
         <div className="al-row">
           <label className="al-field">
             <span className="al-label">{t.sheets.sheet}</span>
-            <input className="al-input" value={sheet} onChange={(e) => setSheet(e.target.value)} placeholder="Sheet1" />
+            <input
+              ref={first}
+              className="al-input"
+              value={sheet}
+              onChange={(e) => setSheet(e.target.value)}
+              placeholder={t.sheets.firstSheet}
+            />
           </label>
           <label className="al-field">
             <span className="al-label">{t.sheets.range}</span>
@@ -74,7 +73,7 @@ export function SheetsDialog({ onSubmit, onClose, picking }: Props) {
         </div>
 
         <button className="al-btn" type="submit" disabled={busy} style={{ marginTop: 28 }}>
-          {picking ? t.sheets.picking : busy ? t.sheets.loading : t.sheets.submit}
+          {busy ? t.sheets.loading : t.sheets.submit}
         </button>
       </form>
     </div>

@@ -43,7 +43,7 @@ export type Request =
   | { type: "START_CAMPAIGN"; campaign: CampaignPayload }
   | { type: "PARSE_SHEET"; spreadsheet: string; range: string }
   // opens Google Picker on the website; the answer comes later as a PickerEvent
-  | { type: "PICK_SHEET"; spreadsheet: string }
+  | { type: "PICK_SHEET" }
   | { type: "FETCH_ATTACHMENT"; url: string }
 
 export type ResponseData = {

@@ -1,7 +1,7 @@
 // Everything that reads or changes Gmail's DOM lives here, so selector
 // changes on Gmail's side need fixing in one place.
 
-import { getList, listChipAddress, parseListChip } from "./lists"
+import { getList, listChipRecipient, parseListChip } from "./lists"
 
 const SEL = {
   composeButton: ".T-I.T-I-KE.L3",
@@ -120,13 +120,13 @@ export function readAttachmentLinks(compose: HTMLElement): AttachmentLink[] {
 }
 
 /** Adds a placeholder chip for an imported list to the "To" field */
-export function addListChip(compose: HTMLElement, listId: string, count: number): boolean {
+export function addListChip(compose: HTMLElement, listId: string, count: number, name: string): boolean {
   const input = compose.querySelector<HTMLInputElement>(SEL.recipientInput)
   if (!input) return false
 
   const previous = document.activeElement as HTMLElement | null
   input.focus()
-  input.value = listChipAddress(listId, count)
+  input.value = listChipRecipient(listId, count, name)
   input.dispatchEvent(new InputEvent("input", { bubbles: true }))
   input.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "Enter", code: "Enter" }))
   previous?.focus()

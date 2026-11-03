@@ -24,9 +24,9 @@ const handlers: Handlers = {
   ACCOUNT: () => account(),
   START_CAMPAIGN: (req) => startCampaign(req.campaign),
   PARSE_SHEET: (req) => parseSheet(req.spreadsheet, req.range),
-  PICK_SHEET: async (req, sender) => {
+  PICK_SHEET: async (_req, sender) => {
     if (sender.tab?.id === undefined) throw new ExtensionError("validation", "Picker is opened from a Gmail tab")
-    return openPicker(req.spreadsheet, sender.tab.id)
+    return openPicker(sender.tab.id)
   },
   FETCH_ATTACHMENT: (req) => fetchAttachment(req.url)
 }
