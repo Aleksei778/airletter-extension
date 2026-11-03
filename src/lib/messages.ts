@@ -31,6 +31,8 @@ export type CampaignPayload = {
   date: string
   time: string
   timezone: string
+  // pause between two emails, seconds
+  send_interval_seconds: number
 }
 
 export type CampaignCreated = { id: number; total: number; skipped: string[]; scheduledAt: string }
