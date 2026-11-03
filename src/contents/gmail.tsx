@@ -12,7 +12,13 @@ import { formatDateTime, locale, t } from "~src/lib/i18n"
 import { send, type AttachmentPayload } from "~src/lib/messages"
 import { loadPause, PAUSE, savePause, validPause } from "~src/lib/prefs"
 import { buildBody, InlineTooLarge, type BodyMode } from "~src/services/body"
-import { findComposeWindow, findSendRows, readAttachmentLinks, readDraft } from "~src/services/gmail"
+import {
+  closeComposeWindow,
+  findComposeWindow,
+  findSendRows,
+  readAttachmentLinks,
+  readDraft
+} from "~src/services/gmail"
 import type { Schedule } from "~src/types"
 
 export const config: PlasmoCSConfig = {
@@ -114,6 +120,8 @@ export default function ComposeActions() {
         text: text + (res.skipped.length ? t.compose.skipped(res.skipped.length) : ""),
         action: { label: t.compose.progress, href: siteLink("/dashboard") }
       })
+      // the campaign is on the server now; the draft stays in Drafts
+      closeComposeWindow(el)
     } catch (e) {
       showError(e)
     } finally {
