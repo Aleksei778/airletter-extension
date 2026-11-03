@@ -11,7 +11,9 @@ const SEL = {
   recipientChips: ".afV[data-hovercard-id], div[peoplekit-id][data-hovercard-id]",
   subject: 'input[name="subject"]',
   body: 'div[role="textbox"][contenteditable="true"]',
-  attachments: ".dL"
+  attachments: ".dL",
+  // "Save & close" in the header of a compose window (also of a full-screen one)
+  closeButton: "img.Ha"
 } as const
 
 export { SEL as GMAIL_SELECTORS }
@@ -105,6 +107,22 @@ export async function readDraft(compose: HTMLElement): Promise<Draft> {
     // innerText keeps line breaks, so pasted HTML code comes back as written
     text: body?.innerText ?? ""
   }
+}
+
+/**
+ * Closes the compose window the way Gmail's "Save & close" does: the draft
+ * stays in Drafts and can be used again. Inline replies in a thread have no
+ * such button and stay open. Returns whether the window was closed.
+ */
+export function closeComposeWindow(compose: HTMLElement): boolean {
+  const scope = compose.closest<HTMLElement>(".AD, [role='dialog']") ?? compose
+  const button = scope.querySelector<HTMLElement>(SEL.closeButton)
+  if (!button) return false
+  // Gmail reacts to the full mouse sequence, not to click() alone
+  for (const type of ["mousedown", "mouseup", "click"]) {
+    button.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, view: window }))
+  }
+  return true
 }
 
 /** Attachments already uploaded to the draft */
